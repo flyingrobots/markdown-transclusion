@@ -1,0 +1,23 @@
+{
+  "name": "markdown-transclusion",
+  "version": "1.0.0",
+  "description": "Stream-based library for resolving Obsidian-style transclusion references in Markdown documents",
+  "main": "dist/index.js",
+  "bin": {
+    "markdown-transclusion": "dist/cli.js"
+  },
+  "files": [
+    "dist/**/*",
+    "README.md",
+    "LICENSE"
+  ],
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
