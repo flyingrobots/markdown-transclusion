@@ -10,3 +10,4 @@ export type {
 } from './types';
 
 export { parseTransclusionReferences } from './parser';
+export { validatePath, isWithinBasePath, SecurityErrors } from './security';
