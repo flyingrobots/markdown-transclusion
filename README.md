@@ -72,4 +72,4 @@ See the [docs](./docs) directory for detailed API documentation and examples.
 
 ## License
 
-ISC
+MIT
