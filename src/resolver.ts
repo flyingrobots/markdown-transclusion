@@ -9,32 +9,74 @@ import { validatePath, isWithinBasePath } from './security';
 const DEFAULT_EXTENSIONS = ['.md', '.markdown'];
 
 /**
+ * Pattern to match variable placeholders
+ * Matches: {{varname}} with optional dashes, underscores, and alphanumeric characters
+ */
+const VARIABLE_PATTERN = /\{\{([a-zA-Z0-9_-]+)\}\}/g;
+
+/**
+ * Substitute variables in a path string
+ * @param path The path containing variable placeholders
+ * @param variables The variables to substitute
+ * @param strict Whether to throw on undefined variables
+ * @returns Path with variables substituted
+ */
+export function substituteVariables(
+  path: string, 
+  variables: Record<string, string> = {},
+  strict = false
+): string {
+  return path.replace(VARIABLE_PATTERN, (match, varName) => {
+    if (varName in variables) {
+      return variables[varName];
+    }
+    if (strict) {
+      throw new Error(`Undefined variable: ${varName}`);
+    }
+    // Return original placeholder if not strict mode
+    return match;
+  });
+}
+
+/**
  * Resolve a transclusion reference to an absolute file path
  * @param reference The reference path from the transclusion
- * @param basePath The base directory for resolving relative paths
- * @param extensions Optional list of extensions to try
+ * @param options Resolution options
  * @returns Resolved path information
  */
 export function resolvePath(
   reference: string,
-  basePath: string,
-  extensions: string[] = DEFAULT_EXTENSIONS
+  options: {
+    basePath: string;
+    extensions?: string[];
+    variables?: Record<string, string>;
+    strict?: boolean;
+  }
 ): ResolvedPath {
+  const { 
+    basePath, 
+    extensions = DEFAULT_EXTENSIONS,
+    variables = {},
+    strict = false
+  } = options;
   try {
+    // First substitute variables in the reference
+    const substitutedReference = substituteVariables(reference, variables, strict);
+    
     // Validate the reference path for security
-    validatePath(reference);
+    validatePath(substitutedReference);
 
     // If the reference already has an extension, use it as-is
-    const hasExtension = path.extname(reference) !== '';
+    const hasExtension = path.extname(substitutedReference) !== '';
     const pathsToTry: string[] = [];
 
     if (hasExtension) {
-      pathsToTry.push(reference);
+      pathsToTry.push(substitutedReference);
     } else {
       // Try with each extension
-      pathsToTry.push(reference); // Try without extension first
+      pathsToTry.push(substitutedReference); // Try without extension first
       extensions.forEach(ext => {
-        pathsToTry.push(reference + ext);
+        pathsToTry.push(substitutedReference + ext);
       });
     }
 
@@ -64,10 +106,10 @@ export function resolvePath(
 
     // No file found
     return {
-      absolutePath: path.resolve(basePath, reference),
+      absolutePath: path.resolve(basePath, substitutedReference),
       exists: false,
       originalReference: reference,
-      error: `File not found: ${reference}`
+      error: `File not found: ${substitutedReference}`
     };
 
   } catch (error) {
