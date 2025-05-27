@@ -8,3 +8,5 @@ export type {
   FileCache,
   TransclusionTransform
 } from './types';
+
+export { parseTransclusionReferences } from './parser';
