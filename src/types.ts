@@ -139,6 +139,11 @@ export interface ResolvedPath {
    * Any error encountered during resolution
    */
   error?: string;
+
+  /**
+   * Error code if error is a known type
+   */
+  errorCode?: number;
 }
 
 /**

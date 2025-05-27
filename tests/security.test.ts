@@ -1,5 +1,16 @@
-import { validatePath, isWithinBasePath, sanitizePath, SecurityErrors } from '../src/security';
+import { validatePath, isWithinBasePath, sanitizePath, SecurityError, SecurityErrorCode } from '../src/security';
 import * as path from 'path';
+
+// Helper to test security errors
+function expectSecurityError(fn: () => void, expectedCode: SecurityErrorCode): void {
+  try {
+    fn();
+    fail('Expected SecurityError to be thrown');
+  } catch (e) {
+    expect(e).toBeInstanceOf(SecurityError);
+    expect((e as SecurityError).code).toBe(expectedCode);
+  }
+}
 
 describe('validatePath', () => {
   describe('valid paths', () => {
@@ -30,63 +41,63 @@ describe('validatePath', () => {
 
   describe('path traversal attempts', () => {
     it('should reject paths starting with ..', () => {
-      expect(() => validatePath('../file.md')).toThrow(SecurityErrors.PATH_TRAVERSAL);
-      expect(() => validatePath('../../file.md')).toThrow(SecurityErrors.PATH_TRAVERSAL);
-      expect(() => validatePath('../../../etc/passwd')).toThrow(SecurityErrors.PATH_TRAVERSAL);
+      expectSecurityError(() => validatePath('../file.md'), SecurityErrorCode.PATH_TRAVERSAL);
+      expectSecurityError(() => validatePath('../../file.md'), SecurityErrorCode.PATH_TRAVERSAL);
+      expectSecurityError(() => validatePath('../../../etc/passwd'), SecurityErrorCode.PATH_TRAVERSAL);
     });
 
     it('should reject paths with .. in the middle', () => {
-      expect(() => validatePath('path/../../../etc/passwd')).toThrow(SecurityErrors.PATH_TRAVERSAL);
-      expect(() => validatePath('some/path/../../../secret')).toThrow(SecurityErrors.PATH_TRAVERSAL);
+      expectSecurityError(() => validatePath('path/../../../etc/passwd'), SecurityErrorCode.PATH_TRAVERSAL);
+      expectSecurityError(() => validatePath('some/path/../../../secret'), SecurityErrorCode.PATH_TRAVERSAL);
     });
 
     it('should reject paths with backslash traversal', () => {
-      expect(() => validatePath('..\\file.md')).toThrow(SecurityErrors.PATH_TRAVERSAL);
-      expect(() => validatePath('path\\..\\..\\file.md')).toThrow(SecurityErrors.PATH_TRAVERSAL);
+      expectSecurityError(() => validatePath('..\\file.md'), SecurityErrorCode.PATH_TRAVERSAL);
+      expectSecurityError(() => validatePath('path\\..\\..\\file.md'), SecurityErrorCode.PATH_TRAVERSAL);
     });
 
     it('should reject URL-encoded traversal attempts', () => {
-      expect(() => validatePath('%2e%2e%2ffile.md')).toThrow(SecurityErrors.PATH_TRAVERSAL);
-      expect(() => validatePath('%2e%2e/file.md')).toThrow(SecurityErrors.PATH_TRAVERSAL);
-      expect(() => validatePath('..%2ffile.md')).toThrow(SecurityErrors.PATH_TRAVERSAL);
-      expect(() => validatePath('%2e%2e%5cfile.md')).toThrow(SecurityErrors.PATH_TRAVERSAL);
+      expectSecurityError(() => validatePath('%2e%2e%2ffile.md'), SecurityErrorCode.PATH_TRAVERSAL);
+      expectSecurityError(() => validatePath('%2e%2e/file.md'), SecurityErrorCode.PATH_TRAVERSAL);
+      expectSecurityError(() => validatePath('..%2ffile.md'), SecurityErrorCode.PATH_TRAVERSAL);
+      expectSecurityError(() => validatePath('%2e%2e%5cfile.md'), SecurityErrorCode.PATH_TRAVERSAL);
     });
 
     it('should reject double-encoded traversal attempts', () => {
-      expect(() => validatePath('%252e%252e%252ffile.md')).toThrow(SecurityErrors.PATH_TRAVERSAL);
-      expect(() => validatePath('%252e%252e%255cfile.md')).toThrow(SecurityErrors.PATH_TRAVERSAL);
+      expectSecurityError(() => validatePath('%252e%252e%252ffile.md'), SecurityErrorCode.PATH_TRAVERSAL);
+      expectSecurityError(() => validatePath('%252e%252e%255cfile.md'), SecurityErrorCode.PATH_TRAVERSAL);
     });
 
     it('should reject mixed case encoded attempts', () => {
-      expect(() => validatePath('%2E%2E%2Ffile.md')).toThrow(SecurityErrors.PATH_TRAVERSAL);
-      expect(() => validatePath('%2e%2E/file.md')).toThrow(SecurityErrors.PATH_TRAVERSAL);
+      expectSecurityError(() => validatePath('%2E%2E%2Ffile.md'), SecurityErrorCode.PATH_TRAVERSAL);
+      expectSecurityError(() => validatePath('%2e%2E/file.md'), SecurityErrorCode.PATH_TRAVERSAL);
     });
   });
 
   describe('absolute paths', () => {
     it('should reject Unix absolute paths', () => {
-      expect(() => validatePath('/etc/passwd')).toThrow(SecurityErrors.ABSOLUTE_PATH);
-      expect(() => validatePath('/usr/bin/node')).toThrow(SecurityErrors.ABSOLUTE_PATH);
-      expect(() => validatePath('/home/user/file.md')).toThrow(SecurityErrors.ABSOLUTE_PATH);
+      expectSecurityError(() => validatePath('/etc/passwd'), SecurityErrorCode.ABSOLUTE_PATH);
+      expectSecurityError(() => validatePath('/usr/bin/node'), SecurityErrorCode.ABSOLUTE_PATH);
+      expectSecurityError(() => validatePath('/home/user/file.md'), SecurityErrorCode.ABSOLUTE_PATH);
     });
 
     it('should reject Windows absolute paths', () => {
-      expect(() => validatePath('C:\\Windows\\System32')).toThrow(SecurityErrors.ABSOLUTE_PATH);
-      expect(() => validatePath('D:\\file.md')).toThrow(SecurityErrors.ABSOLUTE_PATH);
-      expect(() => validatePath('c:/windows/system32')).toThrow(SecurityErrors.ABSOLUTE_PATH);
+      expectSecurityError(() => validatePath('C:\\Windows\\System32'), SecurityErrorCode.ABSOLUTE_PATH);
+      expectSecurityError(() => validatePath('D:\\file.md'), SecurityErrorCode.ABSOLUTE_PATH);
+      expectSecurityError(() => validatePath('c:/windows/system32'), SecurityErrorCode.ABSOLUTE_PATH);
     });
 
     it('should reject UNC paths', () => {
-      expect(() => validatePath('\\\\server\\share\\file.md')).toThrow(SecurityErrors.ABSOLUTE_PATH);
-      expect(() => validatePath('//server/share/file.md')).toThrow(SecurityErrors.ABSOLUTE_PATH);
+      expectSecurityError(() => validatePath('\\\\server\\share\\file.md'), SecurityErrorCode.ABSOLUTE_PATH);
+      expectSecurityError(() => validatePath('//server/share/file.md'), SecurityErrorCode.ABSOLUTE_PATH);
     });
   });
 
   describe('null bytes', () => {
     it('should reject paths with null bytes', () => {
-      expect(() => validatePath('file\0.md')).toThrow(SecurityErrors.NULL_BYTE);
-      expect(() => validatePath('path/to/file\0/test.md')).toThrow(SecurityErrors.NULL_BYTE);
-      expect(() => validatePath('\0etc/passwd')).toThrow(SecurityErrors.NULL_BYTE);
+      expectSecurityError(() => validatePath('file\0.md'), SecurityErrorCode.NULL_BYTE);
+      expectSecurityError(() => validatePath('path/to/file\0/test.md'), SecurityErrorCode.NULL_BYTE);
+      expectSecurityError(() => validatePath('\0etc/passwd'), SecurityErrorCode.NULL_BYTE);
     });
   });
 

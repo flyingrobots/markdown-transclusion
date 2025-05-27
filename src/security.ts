@@ -1,15 +1,49 @@
 import * as path from 'path';
 
 /**
- * Security error messages
+ * Security error codes enum
  */
-export const SecurityErrors = {
-  ABSOLUTE_PATH: 'Absolute paths are not allowed',
-  PATH_TRAVERSAL: 'Path traversal attempts are not allowed',
-  NULL_BYTE: 'Null bytes in paths are not allowed',
-  INVALID_CHARACTERS: 'Invalid characters in path',
-  OUTSIDE_BASE: 'Path resolves outside of base directory'
-} as const;
+export enum SecurityErrorCode {
+  ABSOLUTE_PATH = 1001,
+  PATH_TRAVERSAL = 1002,
+  NULL_BYTE = 1003,
+  INVALID_CHARACTERS = 1004,
+  OUTSIDE_BASE = 1005
+}
+
+/**
+ * Get error message for a security error code
+ * Using switch for best performance with numeric comparison
+ */
+function getSecurityErrorMessage(code: SecurityErrorCode): string {
+  switch (code) {
+    case SecurityErrorCode.ABSOLUTE_PATH:
+      return 'Absolute paths are not allowed';
+    case SecurityErrorCode.PATH_TRAVERSAL:
+      return 'Path traversal attempts are not allowed';
+    case SecurityErrorCode.NULL_BYTE:
+      return 'Null bytes in paths are not allowed';
+    case SecurityErrorCode.INVALID_CHARACTERS:
+      return 'Invalid characters in path';
+    case SecurityErrorCode.OUTSIDE_BASE:
+      return 'Path resolves outside of base directory';
+    default:
+      return 'Unknown security error';
+  }
+}
+
+/**
+ * Security validation error
+ */
+export class SecurityError extends Error {
+  code: SecurityErrorCode;
+  
+  constructor(code: SecurityErrorCode) {
+    super(getSecurityErrorMessage(code));
+    this.name = 'SecurityError';
+    this.code = code;
+  }
+}
 
 /**
  * Validate a path for security issues
@@ -19,22 +53,22 @@ export const SecurityErrors = {
 export function validatePath(filePath: string): boolean {
   // Check for null bytes
   if (filePath.includes('\0')) {
-    throw new Error(SecurityErrors.NULL_BYTE);
+    throw new SecurityError(SecurityErrorCode.NULL_BYTE);
   }
 
   // Check for absolute paths
   if (path.isAbsolute(filePath)) {
-    throw new Error(SecurityErrors.ABSOLUTE_PATH);
+    throw new SecurityError(SecurityErrorCode.ABSOLUTE_PATH);
   }
 
   // Check for Windows absolute paths (C:\, D:\, etc)
   if (/^[a-zA-Z]:[/\\]/.test(filePath)) {
-    throw new Error(SecurityErrors.ABSOLUTE_PATH);
+    throw new SecurityError(SecurityErrorCode.ABSOLUTE_PATH);
   }
 
   // Check for UNC paths (\\server\share or //server/share)
   if (/^[/\\]{2}/.test(filePath)) {
-    throw new Error(SecurityErrors.ABSOLUTE_PATH);
+    throw new SecurityError(SecurityErrorCode.ABSOLUTE_PATH);
   }
 
   // Normalize the path to resolve . and .. segments
@@ -43,12 +77,12 @@ export function validatePath(filePath: string): boolean {
   // Check for path traversal attempts
   // After normalization, any remaining .. at the start means traversal
   if (normalized.startsWith('..')) {
-    throw new Error(SecurityErrors.PATH_TRAVERSAL);
+    throw new SecurityError(SecurityErrorCode.PATH_TRAVERSAL);
   }
 
   // Check for path traversal in the middle (shouldn't happen after normalize, but be safe)
   if (normalized.includes('../') || normalized.includes('..\\')) {
-    throw new Error(SecurityErrors.PATH_TRAVERSAL);
+    throw new SecurityError(SecurityErrorCode.PATH_TRAVERSAL);
   }
 
   // Check for URL-encoded path traversal attempts
@@ -56,7 +90,7 @@ export function validatePath(filePath: string): boolean {
   if (decoded !== filePath) {
     // If decoding changed the path, check it too
     if (decoded.includes('..') || path.isAbsolute(decoded)) {
-      throw new Error(SecurityErrors.PATH_TRAVERSAL);
+      throw new SecurityError(SecurityErrorCode.PATH_TRAVERSAL);
     }
   }
 
@@ -69,7 +103,7 @@ export function validatePath(filePath: string): boolean {
   const lowerPath = filePath.toLowerCase();
   for (const variant of encodedVariants) {
     if (lowerPath.includes(variant)) {
-      throw new Error(SecurityErrors.PATH_TRAVERSAL);
+      throw new SecurityError(SecurityErrorCode.PATH_TRAVERSAL);
     }
   }
 
