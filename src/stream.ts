@@ -7,6 +7,7 @@ export class TransclusionTransform extends Transform {
   private decoder: TextDecoder;
   private buffer: string = '';
   private lineTranscluder: LineTranscluder;
+  private isFirstLine: boolean = true;
 
   constructor(options: TransclusionOptions) {
     super({ readableObjectMode: false, writableObjectMode: false });
@@ -26,7 +27,7 @@ export class TransclusionTransform extends Transform {
       this.buffer = lines.pop() ?? '';
 
       for (const line of lines) {
-        await this.processLine(line);
+        await this.processLine(line, false);
       }
 
       callback();
@@ -38,7 +39,7 @@ export class TransclusionTransform extends Transform {
   async _flush(callback: TransformCallback) {
     try {
       if (this.buffer) {
-        await this.processLine(this.buffer);
+        await this.processLine(this.buffer, true);
       }
       callback();
     } catch (err) {
@@ -46,10 +47,16 @@ export class TransclusionTransform extends Transform {
     }
   }
 
-  private async processLine(line: string): Promise<void> {
+  private async processLine(line: string, isLastLine: boolean): Promise<void> {
     // Delegate all processing logic to LineTranscluder
     const processedLine = await this.lineTranscluder.processLine(line);
-    this.push(processedLine + '\n');
+    
+    if (this.isFirstLine) {
+      this.push(processedLine);
+      this.isFirstLine = false;
+    } else {
+      this.push('\n' + processedLine);
+    }
   }
 }
 
