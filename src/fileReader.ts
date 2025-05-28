@@ -1,6 +1,9 @@
 import * as fs from 'fs';
 import { promisify } from 'util';
 import type { FileCache } from './types';
+import { safeReadFile, safeReadFileSync } from './utils/safeFileReader';
+import { unwrap } from './utils/result';
+import { FileValidationError } from './utils/fileValidation';
 
 const readFileAsync = promisify(fs.readFile);
 const statAsync = promisify(fs.stat);
@@ -56,75 +59,25 @@ export async function readFile(
     }
   }
 
-  try {
-    // Check if file exists and is a file
-    const stats = await statAsync(path);
-    if (!stats.isFile()) {
-      throw new FileReaderError(
-        FileReaderErrorCode.NOT_A_FILE,
-        `Path is not a file: ${path}`
-      );
-    }
-
-    // Check file size limit
-    if (stats.size > MAX_BUFFERED_FILE_SIZE) {
-      throw new FileReaderError(
-        FileReaderErrorCode.FILE_TOO_LARGE,
-        `File too large for buffered reading (${stats.size} bytes > ${MAX_BUFFERED_FILE_SIZE} bytes). Streaming support coming in later commits.`
-      );
-    }
-
-    // Read the file
-    const buffer = await readFileAsync(path);
-    
-    // Check for binary content
-    if (isBinaryContent(buffer)) {
-      throw new FileReaderError(
-        FileReaderErrorCode.BINARY_FILE,
-        `Binary files are not supported: ${path}`
-      );
-    }
-
-    // Convert to string with specified encoding
-    let content = buffer.toString(encoding);
-    
-    // Handle BOM (Byte Order Mark)
-    content = stripBOM(content);
-
-    // Cache the content
-    if (cache) {
-      cache.set(path, content);
-    }
-
-    return content;
-
-  } catch (error) {
-    // Handle specific errors
-    if (error instanceof FileReaderError) {
-      throw error;
-    }
-    
-    if (error && typeof error === 'object' && 'code' in error) {
-      const nodeError = error as NodeJS.ErrnoException;
-      
-      if (nodeError.code === 'ENOENT') {
-        throw new FileReaderError(
-          FileReaderErrorCode.FILE_NOT_FOUND,
-          `File not found: ${path}`
-        );
-      }
-      
-      if (nodeError.code === 'EACCES' || nodeError.code === 'EPERM') {
-        throw new FileReaderError(
-          FileReaderErrorCode.PERMISSION_DENIED,
-          `Permission denied: ${path}`
-        );
-      }
-    }
-    
-    // Re-throw unknown errors
-    throw error;
+  // Use safe file reader
+  const result = await safeReadFile(path, encoding, MAX_BUFFERED_FILE_SIZE);
+  
+  if (!result.ok) {
+    // Convert validation error to FileReaderError for backward compatibility
+    throw new FileReaderError(
+      result.error.code,
+      result.error.message
+    );
   }
+
+  const { content } = result.value;
+
+  // Cache the content
+  if (cache) {
+    cache.set(path, content);
+  }
+
+  return content;
 }
 
 /**
@@ -149,118 +102,31 @@ export function readFileSync(
     }
   }
 
-  try {
-    // Check if file exists and is a file
-    const stats = fs.statSync(path);
-    if (!stats.isFile()) {
-      throw new FileReaderError(
-        FileReaderErrorCode.NOT_A_FILE,
-        `Path is not a file: ${path}`
-      );
-    }
-
-    // Check file size limit
-    if (stats.size > MAX_BUFFERED_FILE_SIZE) {
-      throw new FileReaderError(
-        FileReaderErrorCode.FILE_TOO_LARGE,
-        `File too large for buffered reading (${stats.size} bytes > ${MAX_BUFFERED_FILE_SIZE} bytes). Streaming support coming in later commits.`
-      );
-    }
-
-    // Read the file
-    const buffer = fs.readFileSync(path);
-    
-    // Check for binary content
-    if (isBinaryContent(buffer)) {
-      throw new FileReaderError(
-        FileReaderErrorCode.BINARY_FILE,
-        `Binary files are not supported: ${path}`
-      );
-    }
-
-    // Convert to string with specified encoding
-    let content = buffer.toString(encoding);
-    
-    // Handle BOM
-    content = stripBOM(content);
-
-    // Cache the content
-    if (cache) {
-      cache.set(path, content);
-    }
-
-    return content;
-
-  } catch (error) {
-    // Handle specific errors
-    if (error instanceof FileReaderError) {
-      throw error;
-    }
-    
-    if (error && typeof error === 'object' && 'code' in error) {
-      const nodeError = error as NodeJS.ErrnoException;
-      
-      if (nodeError.code === 'ENOENT') {
-        throw new FileReaderError(
-          FileReaderErrorCode.FILE_NOT_FOUND,
-          `File not found: ${path}`
-        );
-      }
-      
-      if (nodeError.code === 'EACCES' || nodeError.code === 'EPERM') {
-        throw new FileReaderError(
-          FileReaderErrorCode.PERMISSION_DENIED,
-          `Permission denied: ${path}`
-        );
-      }
-    }
-    
-    // Re-throw unknown errors
-    throw error;
-  }
-}
-
-/**
- * Check if buffer contains binary content (for complete file buffers only)
- * @param buffer The complete file buffer
- * @returns True if binary content detected
- */
-function isBinaryContent(buffer: Buffer): boolean {
-  // Quick check for null bytes - definitive binary indicator
-  if (buffer.includes(0)) {
-    return true;
-  }
+  // Use safe file reader
+  const result = safeReadFileSync(path, encoding, MAX_BUFFERED_FILE_SIZE);
   
-  // Validate UTF-8 encoding using TextDecoder
-  try {
-    const decoder = new TextDecoder('utf-8', { fatal: true });
-    decoder.decode(buffer);
-    return false; // Valid UTF-8 text
-  } catch {
-    return true; // Invalid UTF-8, treat as binary
+  if (!result.ok) {
+    // Convert validation error to FileReaderError for backward compatibility
+    throw new FileReaderError(
+      result.error.code,
+      result.error.message
+    );
   }
-}
 
-/**
- * Strip BOM (Byte Order Mark) from string
- * @param content The content to strip BOM from
- * @returns Content without BOM
- */
-function stripBOM(content: string): string {
-  // UTF-8 BOM
-  if (content.charCodeAt(0) === 0xFEFF) {
-    return content.slice(1);
+  const { content } = result.value;
+
+  // Cache the content
+  if (cache) {
+    cache.set(path, content);
   }
-  
-  // UTF-16 BE BOM
-  if (content.charCodeAt(0) === 0xFEFE) {
-    return content.slice(1);
-  }
-  
-  // UTF-16 LE BOM  
-  if (content.charCodeAt(0) === 0xFFFE) {
-    return content.slice(1);
-  }
-  
+
   return content;
 }
+
+// SRP: Helper functions have been extracted to utils/fileValidation.ts and utils/contentProcessing.ts
+// This keeps fileReader.ts focused on the public API and caching concerns
+
+// Re-export safe versions for users who want Result-based error handling
+export { safeReadFile, safeReadFileSync } from './utils/safeFileReader';
+export type { FileReadResult } from './utils/safeFileReader';
+export type { FileValidationError } from './utils/fileValidation';
