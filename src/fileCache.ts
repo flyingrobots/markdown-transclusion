@@ -1,6 +1,32 @@
 import type { FileCache, FileCacheEntry } from './types';
 
 /**
+ * No-op file cache implementation (default)
+ * Does nothing, just passes through
+ */
+export class NoopFileCache implements FileCache {
+  get(_path: string): FileCacheEntry | undefined {
+    return undefined;
+  }
+
+  set(_path: string, _content: string): void {
+    // Do nothing
+  }
+
+  clear(): void {
+    // Do nothing
+  }
+
+  stats(): { size: number; hits: number; misses: number } {
+    return { size: 0, hits: 0, misses: 0 };
+  }
+
+  getTotalSize(): number {
+    return 0;
+  }
+}
+
+/**
  * Simple in-memory file cache implementation
  */
 export class MemoryFileCache implements FileCache {

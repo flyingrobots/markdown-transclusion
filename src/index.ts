@@ -12,5 +12,5 @@ export type {
 export { parseTransclusionReferences } from './parser';
 export { validatePath, isWithinBasePath, SecurityError, SecurityErrorCode } from './security';
 export { resolvePath, substituteVariables } from './resolver';
-export { MemoryFileCache } from './fileCache';
+export { NoopFileCache, MemoryFileCache } from './fileCache';
 export { readFile, readFileSync, FileReaderError, FileReaderErrorCode } from './fileReader';
