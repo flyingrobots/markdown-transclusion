@@ -1,10 +1,12 @@
-import { parseTransclusionReferences } from './parser';
-import { resolvePath } from './resolver';
-import { readFile } from './fileReader';
+import {
+  parseAndResolveRefs,
+  readResolvedRefs,
+  composeLineOutput,
+  extractErrors
+} from './utils/transclusionProcessor';
 import type {
   TransclusionOptions,
-  TransclusionError,
-  ParsedReference
+  TransclusionError
 } from './types';
 
 export interface TransclusionLineResult {
@@ -22,45 +24,22 @@ export async function processLine(
   line: string,
   options: TransclusionOptions
 ): Promise<TransclusionLineResult> {
-  const refs = parseTransclusionReferences(line);
-
+  // Step 1: Parse and resolve references
+  const resolvedRefs = parseAndResolveRefs(line, options);
+  
   // If no transclusion references, just return the line untouched
-  if (refs.length === 0) {
+  if (resolvedRefs.length === 0) {
     return { output: line, errors: [] };
   }
-
-  let cursor = 0;
-  let output = '';
-  const errors: TransclusionError[] = [];
-
-  for (const ref of refs) {
-    output += line.slice(cursor, ref.startIndex);
-    cursor = ref.endIndex;
-
-    const resolved = resolvePath(ref.path, options);
-
-    if (resolved.exists) {
-      try {
-        const content = await readFile(resolved.absolutePath, options.cache);
-        output += content.trim();
-      } catch (err) {
-        errors.push({
-          message: (err as Error).message,
-          path: resolved.absolutePath,
-          code: 'READ_ERROR'
-        });
-        output += `<!-- Error: ${ref.original} -->`;
-      }
-    } else {
-      errors.push({
-        message: resolved.error ?? 'Unknown path resolution error',
-        path: ref.path,
-        code: 'RESOLVE_ERROR'
-      });
-      output += `<!-- Missing: ${ref.path} -->`;
-    }
-  }
-
-  output += line.slice(cursor);
+  
+  // Step 2: Read content for resolved references
+  const processedRefs = await readResolvedRefs(resolvedRefs, options);
+  
+  // Step 3: Compose the output line
+  const output = composeLineOutput(line, processedRefs);
+  
+  // Step 4: Extract errors
+  const errors = extractErrors(processedRefs);
+  
   return { output, errors };
 }

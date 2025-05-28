@@ -31,34 +31,42 @@ This checklist identifies and breaks down areas in the codebase where the Single
 
 ## ✅ processLine()
 
-Currently doing way too much. Break it up.
+~~Currently doing way too much. Break it up.~~ **COMPLETED!**
 
-- [ ] Extract `parseAndResolveRefs()` to find and resolve all transclusion references
-- [ ] Extract `readResolvedRefs()` to read content from resolved paths
-- [ ] Extract `composeLineOutput()` to merge original line with transcluded content
-- [ ] Move error aggregation outside or encapsulate in its own result type
+- [x] Extract `parseAndResolveRefs()` to find and resolve all transclusion references
+- [x] Extract `readResolvedRefs()` to read content from resolved paths
+- [x] Extract `composeLineOutput()` to merge original line with transcluded content
+- [x] Move error aggregation outside or encapsulate in its own result type
 
-**Files to modify:**
-- `src/transclude.ts`
-- Tests: `tests/transclude.test.ts`
+**Files modified:**
+- `src/transclude.ts` - Refactored to use extracted functions
+- `src/utils/transclusionProcessor.ts` - New file with pure functions
+- Tests: `tests/transclude.test.ts` - All tests still pass ✅
+- Tests: `tests/utils/transclusionProcessor.test.ts` - New unit tests for extracted functions ✅
+
+**Status:** ✅ COMPLETED
 
 ---
 
 ## ✅ TransclusionTransform
 
-Currently violating SRP harder than a late-stage startup's monolith.
+~~Currently violating SRP harder than a late-stage startup's monolith.~~ **COMPLETED!**
 
-- [ ] Extract a `TransclusionProcessor` or `LineTranscluder` class
-- [ ] Move the following into this helper class:
-  - [ ] Caching logic
-  - [ ] Path tracking
-  - [ ] Error tracking
-  - [ ] Content joining
-- [ ] Stream class should only manage flow control (`_transform`, `_flush`)
+- [x] Extract a `TransclusionProcessor` or `LineTranscluder` class
+- [x] Move the following into this helper class:
+  - [x] Caching logic
+  - [x] Path tracking
+  - [x] Error tracking
+  - [x] Content joining
+- [x] Stream class should only manage flow control (`_transform`, `_flush`)
 
-**Files to modify:**
-- `src/stream.ts`
-- Tests: `tests/integration/stream.test.ts`
+**Files modified:**
+- `src/stream.ts` - Now only handles stream flow control
+- `src/utils/LineTranscluder.ts` - Handles all business logic
+- Tests: `tests/integration/stream.test.ts` - All tests still pass ✅
+- Tests: `tests/utils/LineTranscluder.test.ts` - New unit tests ✅
+
+**Status:** ✅ COMPLETED
 
 ---
 
@@ -145,13 +153,16 @@ Once this is done, Claudious will no longer be a mere coding intern. He shall be
 - ✅ readFile() & readFileSync() SRP refactoring
 - ✅ Created Result type for functional error handling
 - ✅ Extracted pure validation and processing functions
+- ✅ processLine() decomposition into pure functions
+- ✅ TransclusionTransform separation (LineTranscluder extracted)
+- ✅ Created 40+ pure, testable functions from previously tangled code
 
 ### In Progress
 - 🔄 None
 
 ### Up Next
-- 📋 processLine() decomposition
-- 📋 TransclusionTransform separation
+- 📋 resolvePath() separation
+- 📋 parser.ts tokenization extraction
 
 ---
 
