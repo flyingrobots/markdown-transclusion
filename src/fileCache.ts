@@ -69,3 +69,5 @@ export class MemoryFileCache implements FileCache {
     return total;
   }
 }
+
+export type { FileCache, FileCacheEntry }; // if FileCacheEntry is also needed

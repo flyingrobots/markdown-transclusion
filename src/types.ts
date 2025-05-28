@@ -1,44 +1,11 @@
 import type { Transform } from 'stream';
 
-/**
- * Options for configuring transclusion behavior
- */
 export interface TransclusionOptions {
-  /**
-   * Base directory for resolving relative paths
-   * @default process.cwd()
-   */
-  basePath?: string;
-
-  /**
-   * Allowed file extensions for transclusion
-   * @default ['.md', '.markdown']
-   */
+  basePath: string;
   extensions?: string[];
-
-  /**
-   * Maximum depth for recursive transclusions
-   * @default 10
-   */
-  maxDepth?: number;
-
-  /**
-   * Variables for template substitution
-   * @example { lang: 'es', version: '1.0' }
-   */
   variables?: Record<string, string>;
-
-  /**
-   * Whether to throw errors on missing files or invalid references
-   * @default false
-   */
   strict?: boolean;
-
-  /**
-   * Whether to validate references without processing content
-   * @default false
-   */
-  validateOnly?: boolean;
+  cache?: FileCache;
 }
 
 /**
