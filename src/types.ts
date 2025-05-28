@@ -162,6 +162,11 @@ export interface FileCache {
     hits: number;
     misses: number;
   };
+
+  /**
+   * Get total size of cached content in bytes
+   */
+  getTotalSize?(): number;
 }
 
 /**

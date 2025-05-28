@@ -1,6 +1,7 @@
 import { Readable, Writable } from 'stream';
 import { createTransclusionStream, TransclusionTransform } from '../../src/stream';
 import { MemoryFileCache } from '../../src/fileCache';
+import { MockFileCache, TestDoubleFactory } from '../mocks';
 import type { FileCache } from '../../src/types';
 import * as path from 'path';
 import * as fs from 'fs/promises';
@@ -270,20 +271,19 @@ describe('TransclusionStream Integration Tests', () => {
   });
 
   describe('Cache behavior', () => {
-    it('should cache file reads', async () => {
-      const cache = new MemoryFileCache();
-      const spyGet = jest.spyOn(cache, 'get');
-      const spySet = jest.spyOn(cache, 'set');
+    it('should track cache interactions via injected mock', async () => {
+      const mockCache = new MockFileCache();
       
       const input = '![[simple]]\n![[simple]]\n![[simple]]';
       const result = await processString(input, {
         basePath: fixturesPath,
-        cache
+        cache: mockCache
       });
       
       // File should be read once and cached
-      expect(spySet).toHaveBeenCalledTimes(1);
-      expect(spyGet).toHaveBeenCalledTimes(3);
+      expect(mockCache.setCallCount()).toBe(1);
+      expect(mockCache.getCallCount()).toBe(3);
+      expect(mockCache.wasSet(path.join(fixturesPath, 'simple.md'))).toBe(true);
       
       // All three transclusions should be resolved
       const simpleContent = await fs.readFile(path.join(fixturesPath, 'simple.md'), 'utf-8');
@@ -291,24 +291,86 @@ describe('TransclusionStream Integration Tests', () => {
       expect(occurrences).toBe(3);
     });
 
-    it('should report cache hits when enabled', async () => {
-      const cache = new MemoryFileCache();
+    it('should demonstrate cache hit/miss behavior with mock', async () => {
+      const mockCache = new MockFileCache();
       
       // First read - cache miss
       await processString('![[simple]]', {
         basePath: fixturesPath,
-        cache
+        cache: mockCache
       });
+      
+      expect(mockCache.hits).toBe(0);
+      expect(mockCache.misses).toBe(1);
+      expect(mockCache.setCallCount()).toBe(1);
+      
+      // Reset counters but keep cache content
+      mockCache.hits = 0;
+      mockCache.misses = 0;
       
       // Second read - cache hit
-      const spyGet = jest.spyOn(cache, 'get');
       await processString('![[simple]]', {
         basePath: fixturesPath,
-        cache
+        cache: mockCache
       });
       
-      expect(spyGet).toHaveBeenCalled();
-      expect(spyGet).toHaveReturned();
+      expect(mockCache.hits).toBe(1);
+      expect(mockCache.misses).toBe(0);
+      expect(mockCache.setCallCount()).toBe(1); // No new sets
+    });
+
+    it('should verify multiple file caching behavior', async () => {
+      const mockCache = new MockFileCache();
+      
+      const input = '![[simple]]\n![[no-trailing-newline]]\n![[simple]]';
+      await processString(input, {
+        basePath: fixturesPath,
+        cache: mockCache
+      });
+      
+      // Verify cache interactions
+      expect(mockCache.getCallCount()).toBe(3);
+      expect(mockCache.setCallCount()).toBe(2); // Two unique files
+      
+      // Verify specific files were cached
+      expect(mockCache.wasSet(path.join(fixturesPath, 'simple.md'))).toBe(true);
+      expect(mockCache.wasSet(path.join(fixturesPath, 'no-trailing-newline.md'))).toBe(true);
+      
+      // Verify call order
+      const getCalls = mockCache.getCalls;
+      expect(getCalls[0]).toBe(path.join(fixturesPath, 'simple.md'));
+      expect(getCalls[1]).toBe(path.join(fixturesPath, 'no-trailing-newline.md'));
+      expect(getCalls[2]).toBe(path.join(fixturesPath, 'simple.md'));
+    });
+
+    it('should work with factory-created test doubles', async () => {
+      // Using the factory for different scenarios
+      const mockCache = TestDoubleFactory.createMockFileCache();
+      
+      const input = '![[simple]]';
+      await processString(input, {
+        basePath: fixturesPath,
+        cache: mockCache
+      });
+      
+      expect(mockCache.getCallCount()).toBe(1);
+      expect(mockCache.setCallCount()).toBe(1);
+      
+      // Test with preset cache containing real file
+      const presetCache = TestDoubleFactory.createPresetCache({
+        [path.join(fixturesPath, 'simple.md')]: 'Cached content from factory'
+      });
+      
+      // First call will hit the preset cache
+      const input2 = '![[simple]]';
+      const result = await processString(input2, {
+        basePath: fixturesPath,
+        cache: presetCache
+      });
+      
+      expect(result).toContain('Cached content from factory');
+      expect(presetCache.hits).toBe(1);
+      expect(presetCache.misses).toBe(0);
     });
   });
 
