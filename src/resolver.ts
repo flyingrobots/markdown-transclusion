@@ -2,6 +2,13 @@ import * as path from 'path';
 import * as fs from 'fs';
 import type { ResolvedPath, TransclusionOptions } from './types';
 import { validatePath, isWithinBasePath } from './security';
+import {
+  generatePathsToTry,
+  validateReferencePath,
+  validateWithinBase,
+  findExistingFile,
+  resolveToAbsolutePath
+} from './utils/pathResolution';
 
 /**
  * Default file extensions to try when no extension is provided
@@ -59,45 +66,47 @@ export function resolvePath(
     variables = {},
     strict = false
   } = options;
+  
   try {
-    // First substitute variables in the reference
+    // Step 1: Substitute variables
     const substitutedReference = substituteVariables(reference, variables, strict);
     
-    // Validate the reference path for security
-    validatePath(substitutedReference);
-
-    // If the reference already has an extension, use it as-is
-    const hasExtension = path.extname(substitutedReference) !== '';
-    const pathsToTry: string[] = [];
-
-    if (hasExtension) {
-      pathsToTry.push(substitutedReference);
-    } else {
-      // Try with each extension
-      pathsToTry.push(substitutedReference); // Try without extension first
-      extensions.forEach(ext => {
-        pathsToTry.push(substitutedReference + ext);
-      });
+    // Step 2: Validate the reference path
+    const validationResult = validateReferencePath(substitutedReference);
+    if (!validationResult.ok) {
+      return {
+        absolutePath: '',
+        exists: false,
+        originalReference: reference,
+        error: validationResult.error.message,
+        errorCode: validationResult.error.errorCode
+      };
     }
 
-    // Try each potential path
-    for (const relativePath of pathsToTry) {
-      const absolutePath = path.resolve(basePath, relativePath);
+    // Step 3: Generate paths to try
+    const pathsToTry = generatePathsToTry(substitutedReference, extensions);
 
-      // Security check: ensure resolved path is within base directory
-      if (!isWithinBasePath(absolutePath, basePath)) {
+    // Step 4: Try each potential path
+    for (const relativePath of pathsToTry) {
+      const absolutePath = resolveToAbsolutePath(relativePath, basePath);
+
+      // Step 5: Security check
+      const securityResult = validateWithinBase(absolutePath, basePath, relativePath);
+      if (!securityResult.ok) {
         return {
           absolutePath: '',
           exists: false,
           originalReference: reference,
-          error: `Path resolves outside base directory: ${relativePath}`
+          error: securityResult.error.message,
+          errorCode: securityResult.error.errorCode
         };
       }
 
-      // Check if file exists and is actually a file (not directory)
-      if (fs.existsSync(absolutePath) && fs.statSync(absolutePath).isFile()) {
+      // Step 6: Check if file exists
+      const existingFile = findExistingFile([relativePath], basePath);
+      if (existingFile) {
         return {
-          absolutePath,
+          absolutePath: existingFile.absolutePath,
           exists: true,
           originalReference: reference
         };
@@ -106,14 +115,14 @@ export function resolvePath(
 
     // No file found
     return {
-      absolutePath: path.resolve(basePath, substitutedReference),
+      absolutePath: resolveToAbsolutePath(substitutedReference, basePath),
       exists: false,
       originalReference: reference,
       error: `File not found: ${substitutedReference}`
     };
 
   } catch (error) {
-    // Security validation failed
+    // Handle unexpected errors
     return {
       absolutePath: '',
       exists: false,

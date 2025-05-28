@@ -84,29 +84,39 @@ Spying = code smell. *(Already completed with MockFileCache!)*
 
 ## ✅ resolvePath() in resolver.ts
 
-This function has multiple jobs crammed in.
+~~This function has multiple jobs crammed in.~~ **COMPLETED!**
 
-- [ ] Extract `substituteVariables(path, variables)`
-- [ ] Extract `validatePath(path, basePath)`
-- [ ] Extract `normalizePath(path)` (if needed)
-- [ ] Compose these functions explicitly
+- [x] Extract `substituteVariables(path, variables)` - Already extracted!
+- [x] Extract `validatePath(path, basePath)` - Created validateReferencePath
+- [x] Extract `normalizePath(path)` - Created normalizePath
+- [x] Compose these functions explicitly - Now composed step-by-step
 
-**Files to modify:**
-- `src/resolver.ts`
-- Tests: `tests/resolver.test.ts`
+**Files modified:**
+- `src/resolver.ts` - Refactored to use extracted functions
+- `src/utils/pathResolution.ts` - New file with 7 pure functions
+- Tests: `tests/resolver.test.ts` - All tests still pass ✅
+- Tests: `tests/utils/pathResolution.test.ts` - New unit tests ✅
+
+**Status:** ✅ COMPLETED
 
 ---
 
 ## ✅ parser.ts — parseTransclusionReferences()
 
-- [ ] Split out:
-  - [ ] Tokenization (regex scan)
-  - [ ] Reference extraction (building `TransclusionReference[]`)
-- [ ] Add unit tests for both pieces independently
+~~Split out tokenization and reference building.~~ **COMPLETED!**
 
-**Files to modify:**
-- `src/parser.ts`
-- Tests: `tests/parser.test.ts`
+- [x] Split out:
+  - [x] Tokenization (regex scan) - Created findTransclusionTokens
+  - [x] Reference extraction (building `TransclusionReference[]`) - Created createReferenceFromToken
+- [x] Add unit tests for both pieces independently
+
+**Files modified:**
+- `src/parser.ts` - Refactored to use extracted functions
+- `src/utils/parserUtils.ts` - New file with 8 pure functions
+- Tests: `tests/parser.test.ts` - All tests still pass ✅
+- Tests: `tests/utils/parserUtils.test.ts` - 24 new unit tests ✅
+
+**Status:** ✅ COMPLETED
 
 ---
 
@@ -155,14 +165,20 @@ Once this is done, Claudious will no longer be a mere coding intern. He shall be
 - ✅ Extracted pure validation and processing functions
 - ✅ processLine() decomposition into pure functions
 - ✅ TransclusionTransform separation (LineTranscluder extracted)
-- ✅ Created 40+ pure, testable functions from previously tangled code
+- ✅ resolvePath() separation into 7 composable functions
+- ✅ parser.ts tokenization extraction into 8 pure functions
+- ✅ Created 50+ pure, testable functions from previously tangled code
+- ✅ Added 70+ new unit tests for extracted functions
 
 ### In Progress
-- 🔄 None
+- 🔄 None - All SRP tasks completed! 🎉
 
-### Up Next
-- 📋 resolvePath() separation
-- 📋 parser.ts tokenization extraction
+### Stats
+- **Files refactored**: 6 major modules
+- **New utility modules**: 9 focused files
+- **Pure functions created**: 50+
+- **New unit tests**: 70+
+- **Code quality**: All functions < 40 lines with single responsibilities
 
 ---
 

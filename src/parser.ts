@@ -1,4 +1,12 @@
 import type { ParsedReference } from './types';
+import {
+  createCharacterMask,
+  maskInlineCode,
+  maskHtmlComments,
+  findTransclusionTokens,
+  createReferenceFromToken,
+  isMasked
+} from './utils/parserUtils';
 
 /**
  * Regular expression to match transclusion syntax
@@ -24,44 +32,25 @@ const HTML_COMMENT_PATTERN = /<!--[\s\S]*?-->/g;
  * @returns Array of parsed references
  */
 export function parseTransclusionReferences(line: string): ParsedReference[] {
+  // Step 1: Create character mask
+  const mask = createCharacterMask(line.length);
+  
+  // Step 2: Mask regions we should ignore
+  maskInlineCode(line, mask);
+  maskHtmlComments(line, mask);
+  
+  // Step 3: Find all transclusion tokens
+  const tokens = findTransclusionTokens(line);
+  
+  // Step 4: Filter tokens that are not masked and convert to references
   const references: ParsedReference[] = [];
   
-  // Create a mask to track which characters are inside code blocks or comments
-  const mask = new Array(line.length).fill(true);
-  
-  // Mark inline code regions
-  let match;
-  while ((match = INLINE_CODE_PATTERN.exec(line)) !== null) {
-    for (let i = match.index; i < match.index + match[0].length; i++) {
-      mask[i] = false;
-    }
-  }
-  
-  // Mark HTML comment regions
-  HTML_COMMENT_PATTERN.lastIndex = 0;
-  while ((match = HTML_COMMENT_PATTERN.exec(line)) !== null) {
-    for (let i = match.index; i < match.index + match[0].length; i++) {
-      mask[i] = false;
-    }
-  }
-  
-  // Find transclusion references that are not masked
-  TRANSCLUSION_PATTERN.lastIndex = 0;
-  while ((match = TRANSCLUSION_PATTERN.exec(line)) !== null) {
-    // Check if this match is inside a masked region
-    if (mask[match.index]) {
-      const path = match[1].trim();
-      const heading = match[2]?.trim();
-      
-      // Skip empty paths after trimming
-      if (path) {
-        references.push({
-          original: match[0],
-          path,
-          startIndex: match.index,
-          endIndex: match.index + match[0].length,
-          ...(heading && { heading })
-        });
+  for (const token of tokens) {
+    // Check if token is in a masked region
+    if (!isMasked(mask, token.startIndex)) {
+      const reference = createReferenceFromToken(token);
+      if (reference) {
+        references.push(reference);
       }
     }
   }
