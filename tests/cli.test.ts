@@ -80,7 +80,7 @@ describe('CLI Integration', () => {
       const result = await runCli(['input.md']);
       
       expect(result.exitCode).toBe(0);
-      expect(result.stdout).toContain('<!-- Error:');
+      expect(result.stdout).toContain('<!-- Error: File not found');
       expect(result.stderr).toContain('WARN');
       expect(result.stderr).toContain('missing.md');
     });
@@ -238,8 +238,8 @@ describe('CLI Integration', () => {
       const result = await runCli(['a.md']);
       
       expect(result.exitCode).toBe(0); // Non-strict mode
-      expect(result.stdout).toContain('<!-- Error:');
-      expect(result.stdout).toContain('circular');
+      expect(result.stdout).toContain('<!-- Error: Circular reference detected');
+      expect(result.stdout).not.toContain('circular');
       expect(result.stderr).toContain('WARN');
     });
   });

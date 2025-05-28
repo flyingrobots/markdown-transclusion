@@ -45,7 +45,7 @@ describe('TransclusionStream Integration Tests', () => {
       });
       
       const simpleContent = await fs.readFile(path.join(fixturesPath, 'simple.md'), 'utf-8');
-      expect(result).toBe(`Before\n${simpleContent.trim()}\nAfter\n`);
+      expect(result).toBe(`Before\n${simpleContent.trim()}\nAfter`);
     });
 
     it('should handle multiple transclusions in one document', async () => {
@@ -57,7 +57,7 @@ describe('TransclusionStream Integration Tests', () => {
       
       expect(result).toContain('This is a simple test file');
       expect(result).toContain('This file has no trailing newline');
-      expect(result).toMatch(/# Document\n.*\n## Section\n.*\nEnd\n/s);
+      expect(result).toMatch(/# Document\n.*\n## Section\n.*\nEnd$/s);
     });
 
     it('should preserve whitespace and formatting', async () => {
@@ -68,7 +68,7 @@ describe('TransclusionStream Integration Tests', () => {
       });
       
       expect(result).toMatch(/^  Indented line\n/);
-      expect(result).toMatch(/\n    Code block\n$/);
+      expect(result).toMatch(/\n    Code block$/);
     });
   });
 
@@ -148,7 +148,7 @@ describe('TransclusionStream Integration Tests', () => {
       });
       
       expect(result).toContain('Before');
-      expect(result).toContain('<!-- Missing: non-existent-file -->');
+      expect(result).toContain('<!-- Error: File not found: non-existent-file -->');
       expect(result).toContain('After');
     });
 
@@ -167,7 +167,7 @@ describe('TransclusionStream Integration Tests', () => {
       await streamToString(readable.pipe(transclusionStream));
       
       expect(transclusionStream.errors).toHaveLength(1);
-      expect(transclusionStream.errors[0].code).toBe('RESOLVE_ERROR');
+      expect(transclusionStream.errors[0].code).toBe('FILE_NOT_FOUND');
       expect(transclusionStream.errors[0].path).toBe('non-existent-file');
     });
   });

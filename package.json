@@ -16,13 +16,36 @@
   },
   "scripts": {
     "build": "tsc",
+    "build:watch": "tsc --watch",
     "test": "jest",
     "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
     "lint": "eslint src --ext .ts",
-    "clean": "rm -rf dist coverage"
+    "lint:fix": "eslint src --ext .ts --fix",
+    "type-check": "tsc --noEmit",
+    "clean": "rm -rf dist coverage",
+    "prepublishOnly": "npm run clean && npm run build && npm test"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": [
+    "markdown",
+    "transclusion",
+    "obsidian",
+    "documentation",
+    "stream",
+    "transform"
+  ],
+  "author": "Anthropic",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/anthropics/markdown-transclusion.git"
+  },
+  "bugs": {
+    "url": "https://github.com/anthropics/markdown-transclusion/issues"
+  },
+  "homepage": "https://github.com/anthropics/markdown-transclusion#readme",
+  "engines": {
+    "node": ">=16.0.0"
+  },
   "license": "MIT",
   "devDependencies": {
     "@eslint/js": "^9.27.0",

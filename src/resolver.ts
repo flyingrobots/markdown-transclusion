@@ -35,13 +35,15 @@ export function resolvePath(
     extensions?: string[];
     variables?: Record<string, string>;
     strict?: boolean;
+    parentPath?: string;
   }
 ): FileResolution {
   const { 
     basePath, 
     extensions = DEFAULT_EXTENSIONS,
     variables = {},
-    strict = false
+    strict = false,
+    parentPath
   } = options;
   
   try {
@@ -60,12 +62,19 @@ export function resolvePath(
       };
     }
 
-    // Step 3: Generate paths to try using extension resolver
+    // Step 3: Determine the resolution base (parent directory or base path)
+    let resolutionBase = basePath;
+    if (parentPath && !path.isAbsolute(substitutedReference)) {
+      // If parent path is provided and reference is relative, resolve from parent
+      resolutionBase = path.dirname(parentPath);
+    }
+    
+    // Step 4: Generate paths to try using extension resolver
     const pathsToTry = resolveExtensions(substitutedReference, extensions);
 
-    // Step 4: Try each potential path
+    // Step 5: Try each potential path
     for (const relativePath of pathsToTry) {
-      const absolutePath = resolveToAbsolutePath(relativePath, basePath);
+      const absolutePath = resolveToAbsolutePath(relativePath, resolutionBase);
 
       // Step 5: Security check
       const securityResult = validateWithinBase(absolutePath, basePath, relativePath);

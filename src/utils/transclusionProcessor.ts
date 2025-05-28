@@ -8,6 +8,7 @@ import { parseTransclusionReferences } from '../parser';
 import { resolvePath } from '../resolver';
 import { readFile } from '../fileReader';
 import { trimForTransclusion } from './contentProcessing';
+import { extractHeadingContent } from './headingExtractor';
 
 /**
  * Reference with its resolved path information
@@ -32,13 +33,14 @@ export interface ProcessedReference {
  */
 export function parseAndResolveRefs(
   line: string,
-  options: TransclusionOptions
+  options: TransclusionOptions,
+  parentPath?: string
 ): ResolvedReference[] {
   const refs = parseTransclusionReferences(line);
   
   return refs.map(ref => ({
     ref,
-    resolved: resolvePath(ref.path, options)
+    resolved: resolvePath(ref.path, { ...options, parentPath })
   }));
 }
 
@@ -54,7 +56,26 @@ export async function readResolvedRefs(
   for (const { ref, resolved } of resolvedRefs) {
     if (resolved.exists) {
       try {
-        const content = await readFile(resolved.absolutePath, options.cache);
+        let content = await readFile(resolved.absolutePath, options.cache);
+        
+        // Extract specific heading if requested
+        if (ref.heading) {
+          const headingContent = extractHeadingContent(content, ref.heading);
+          if (headingContent === null) {
+            results.push({
+              ref,
+              resolved,
+              error: {
+                message: `Heading "${ref.heading}" not found in ${resolved.absolutePath}`,
+                path: resolved.absolutePath,
+                code: 'HEADING_NOT_FOUND'
+              }
+            });
+            continue;
+          }
+          content = headingContent;
+        }
+        
         results.push({
           ref,
           resolved,
@@ -76,9 +97,9 @@ export async function readResolvedRefs(
         ref,
         resolved,
         error: {
-          message: resolved.error ?? 'Unknown path resolution error',
+          message: resolved.error ?? 'File not found',
           path: ref.path,
-          code: 'RESOLVE_ERROR'
+          code: 'FILE_NOT_FOUND'
         }
       });
     }
@@ -111,10 +132,10 @@ export function composeLineOutput(
     // Add replacement content or error placeholder
     if (content !== undefined) {
       output += content;
-    } else if (error?.code === 'READ_ERROR') {
-      output += `<!-- Error: ${ref.original} -->`;
+    } else if (error) {
+      output += `<!-- Error: ${error.message} -->`;
     } else {
-      output += `<!-- Missing: ${ref.path} -->`;
+      output += `<!-- Error: Could not transclude ${ref.path} -->`;
     }
   }
   
