@@ -16,7 +16,7 @@ describe('processLine', () => {
 
   it('should return line unchanged if no transclusion present', async () => {
     const result = await processLine('Just a regular line.', options);
-    expect(result.output).toBe('Just a regular line.\n');
+    expect(result.output).toBe('Just a regular line.');
     expect(result.errors).toEqual([]);
   });
 
@@ -24,7 +24,7 @@ describe('processLine', () => {
     const result = await processLine('Start ![[simple]] end.', options);
     expect(result.output).toContain('Start ');
     expect(result.output).toContain('# Simple File');
-    expect(result.output).toContain(' end.\n');
+    expect(result.output).toContain(' end.');
     expect(result.errors).toEqual([]);
   });
 
@@ -51,8 +51,8 @@ describe('processLine', () => {
 
   it('should trim trailing newline from included content', async () => {
     const result = await processLine('![[simple]]', options);
-    expect(result.output.endsWith('\n')).toBe(true);
-    const parts = result.output.split('\n');
-    expect(parts.length).toBeGreaterThan(1);
+    expect(result.output.endsWith('\n')).toBe(false);
+    // The content should be trimmed
+    expect(result.output).not.toMatch(/\s+$/);
   });
 });

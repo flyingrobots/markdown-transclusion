@@ -91,6 +91,6 @@ export class TransclusionTransform extends Transform {
   }
 }
 
-export function createTransclusionStream(options: TransclusionOptions): Transform {
+export function createTransclusionStream(options: TransclusionOptions): TransclusionTransform {
   return new TransclusionTransform(options);
 }

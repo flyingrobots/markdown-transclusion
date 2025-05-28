@@ -1,21 +1,33 @@
 ✅ markdown-transclusion Remaining Task List (Post-Stream Phase)
 
-This list replaces the now-obsolete TASKLIST.md. It aligns directly with the implementation state of the repository as of commit 7d7338e, and the requirements outlined in tech-plan.md.
+This list replaces the now-obsolete TASKLIST.md. It aligns directly with the implementation state of the repository as of commit ebb5994, and the requirements outlined in tech-plan.md.
+
+**COMPLETED WORK:**
+- ✅ Core file reading with UTF-8 validation and BOM handling
+- ✅ In-memory file cache implementation (now optional)
+- ✅ Parser for transclusion references
+- ✅ Path resolver with variable substitution
+- ✅ Security validation for path traversal
+- ✅ Stream-based transclusion processing
+- ✅ Line processor integration
+- ✅ NoopFileCache implementation for opt-in caching strategy
 
 ⸻
 
 📂 PHASE 1: Integration & CLI
 
-✅ Commit 1: TransclusionStream Integration Tests
-	- [ ]	Create tests/integration/stream.test.ts
-	- [ ]	Add fixture input files with:
-	- [ ]	Basic includes
-	- [ ]	Recursive includes (depth > 1)
-	- [ ]	Missing files (warn mode)
-	- [ ]	Multilingual substitutions ({{lang}})
-	- [ ]	Circular references
-	- [ ]	Assert that streamed output matches expected merged Markdown
-	- [ ]	Confirm cache hits/misses are reported if enabled
+✅ Commit 1: TransclusionStream Integration Tests  
+	- [x]	Create tests/integration/stream.test.ts
+	- [x]	Add fixture input files with:
+	- [x]	Basic includes
+	- [x]	Recursive includes (depth > 1) - tests written but failing (feature not implemented)
+	- [x]	Missing files (warn mode)
+	- [x]	Multilingual substitutions ({{lang}})
+	- [x]	Circular references - tests written but detection not implemented
+	- [x]	Assert that streamed output matches expected merged Markdown
+	- [x]	Confirm cache hits/misses are reported if enabled
+
+Note: Recursive transclusion tests are failing because the feature isn't implemented yet. This needs to be done before tests will pass.
 
 Commit message: test(stream): add integration tests for recursive and multilingual transclusion
 

@@ -6,6 +6,8 @@ export interface TransclusionOptions {
   variables?: Record<string, string>;
   strict?: boolean;
   cache?: FileCache;
+  maxDepth?: number;
+  validateOnly?: boolean;
 }
 
 /**

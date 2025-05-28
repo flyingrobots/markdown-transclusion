@@ -271,7 +271,7 @@ describe('TransclusionStream Integration Tests', () => {
 
   describe('Cache behavior', () => {
     it('should cache file reads', async () => {
-      const cache = new FileCache();
+      const cache = new MemoryFileCache();
       const spyGet = jest.spyOn(cache, 'get');
       const spySet = jest.spyOn(cache, 'set');
       
@@ -292,7 +292,7 @@ describe('TransclusionStream Integration Tests', () => {
     });
 
     it('should report cache hits when enabled', async () => {
-      const cache = new FileCache();
+      const cache = new MemoryFileCache();
       
       // First read - cache miss
       await processString('![[simple]]', {
@@ -308,7 +308,7 @@ describe('TransclusionStream Integration Tests', () => {
       });
       
       expect(spyGet).toHaveBeenCalled();
-      expect(spyGet).toHaveReturnValue();
+      expect(spyGet).toHaveReturned();
     });
   });
 
