@@ -2,9 +2,9 @@ import type {
   TransclusionOptions,
   TransclusionError,
   TransclusionResult,
-  ParsedReference,
-  ResolvedPath,
-  FileCacheEntry,
+  TransclusionToken,
+  FileResolution,
+  CachedFileContent,
   FileCache,
   TransclusionTransform
 } from '../src';
@@ -41,8 +41,8 @@ describe('Type Definitions', () => {
     expect(result).toBeDefined();
   });
 
-  it('should compile ParsedReference interface', () => {
-    const reference: ParsedReference = {
+  it('should compile TransclusionToken interface', () => {
+    const reference: TransclusionToken = {
       original: '![[file.md]]',
       path: 'file.md',
       startIndex: 0,
@@ -52,8 +52,8 @@ describe('Type Definitions', () => {
     expect(reference).toBeDefined();
   });
 
-  it('should compile ResolvedPath interface', () => {
-    const resolved: ResolvedPath = {
+  it('should compile FileResolution interface', () => {
+    const resolved: FileResolution = {
       absolutePath: '/absolute/path/to/file.md',
       exists: true,
       originalReference: 'file.md',
@@ -62,8 +62,8 @@ describe('Type Definitions', () => {
     expect(resolved).toBeDefined();
   });
 
-  it('should compile FileCacheEntry interface', () => {
-    const entry: FileCacheEntry = {
+  it('should compile CachedFileContent interface', () => {
+    const entry: CachedFileContent = {
       content: 'File content',
       timestamp: Date.now(),
       size: 12

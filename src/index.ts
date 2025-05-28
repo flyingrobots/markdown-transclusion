@@ -2,9 +2,9 @@ export type {
   TransclusionOptions,
   TransclusionError,
   TransclusionResult,
-  ParsedReference,
-  ResolvedPath,
-  FileCacheEntry,
+  TransclusionToken,
+  FileResolution,
+  CachedFileContent,
   FileCache
 } from './types';
 

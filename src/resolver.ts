@@ -1,6 +1,6 @@
 import * as path from 'path';
 import * as fs from 'fs';
-import type { ResolvedPath, TransclusionOptions } from './types';
+import type { FileResolution, TransclusionOptions } from './types';
 import { validatePath, isWithinBasePath } from './security';
 import {
   generatePathsToTry,
@@ -36,7 +36,7 @@ export function resolvePath(
     variables?: Record<string, string>;
     strict?: boolean;
   }
-): ResolvedPath {
+): FileResolution {
   const { 
     basePath, 
     extensions = DEFAULT_EXTENSIONS,

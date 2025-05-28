@@ -1,11 +1,11 @@
-import type { FileCache, FileCacheEntry } from '../../src/types';
+import type { FileCache, CachedFileContent } from '../../src/types';
 
 /**
  * Mock file cache for testing
  * Tracks all interactions for verification
  */
 export class MockFileCache implements FileCache {
-  private cache = new Map<string, FileCacheEntry>();
+  private cache = new Map<string, CachedFileContent>();
   
   // Call tracking
   getCalls: string[] = [];
@@ -18,7 +18,7 @@ export class MockFileCache implements FileCache {
   hits = 0;
   misses = 0;
   
-  get(path: string): FileCacheEntry | undefined {
+  get(path: string): CachedFileContent | undefined {
     this.getCalls.push(path);
     const entry = this.cache.get(path);
     

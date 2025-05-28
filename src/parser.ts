@@ -1,4 +1,4 @@
-import type { ParsedReference } from './types';
+import type { TransclusionToken } from './types';
 import {
   createCharacterMask,
   maskInlineCode,
@@ -31,7 +31,7 @@ const HTML_COMMENT_PATTERN = /<!--[\s\S]*?-->/g;
  * @param line The line to parse
  * @returns Array of parsed references
  */
-export function parseTransclusionReferences(line: string): ParsedReference[] {
+export function parseTransclusionReferences(line: string): TransclusionToken[] {
   // Step 1: Create character mask
   const mask = createCharacterMask(line.length);
   
@@ -43,7 +43,7 @@ export function parseTransclusionReferences(line: string): ParsedReference[] {
   const tokens = findTransclusionTokens(line);
   
   // Step 4: Filter tokens that are not masked and convert to references
-  const references: ParsedReference[] = [];
+  const references: TransclusionToken[] = [];
   
   for (const token of tokens) {
     // Check if token is in a masked region

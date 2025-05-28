@@ -56,9 +56,9 @@ export interface TransclusionResult {
 }
 
 /**
- * Parsed transclusion reference from markdown
+ * Parsed transclusion token from markdown
  */
-export interface ParsedReference {
+export interface TransclusionToken {
   /**
    * The complete original reference (e.g., "![[file.md]]")
    */
@@ -86,9 +86,9 @@ export interface ParsedReference {
 }
 
 /**
- * Resolved file path with metadata
+ * File resolution result with metadata
  */
-export interface ResolvedPath {
+export interface FileResolution {
   /**
    * Absolute path to the file
    */
@@ -116,9 +116,9 @@ export interface ResolvedPath {
 }
 
 /**
- * Internal file cache entry
+ * Cached file content with metadata
  */
-export interface FileCacheEntry {
+export interface CachedFileContent {
   /**
    * File content
    */
@@ -142,7 +142,7 @@ export interface FileCache {
   /**
    * Get cached content for a path
    */
-  get(path: string): FileCacheEntry | undefined;
+  get(path: string): CachedFileContent | undefined;
 
   /**
    * Store content in cache

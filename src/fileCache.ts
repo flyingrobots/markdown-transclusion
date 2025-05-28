@@ -1,11 +1,11 @@
-import type { FileCache, FileCacheEntry } from './types';
+import type { FileCache, CachedFileContent } from './types';
 
 /**
  * No-op file cache implementation (default)
  * Does nothing, just passes through
  */
 export class NoopFileCache implements FileCache {
-  get(_path: string): FileCacheEntry | undefined {
+  get(_path: string): CachedFileContent | undefined {
     return undefined;
   }
 
@@ -30,7 +30,7 @@ export class NoopFileCache implements FileCache {
  * Simple in-memory file cache implementation
  */
 export class MemoryFileCache implements FileCache {
-  private cache = new Map<string, FileCacheEntry>();
+  private cache = new Map<string, CachedFileContent>();
   private hits = 0;
   private misses = 0;
 
@@ -39,7 +39,7 @@ export class MemoryFileCache implements FileCache {
    * @param path The file path
    * @returns Cached entry or undefined
    */
-  get(path: string): FileCacheEntry | undefined {
+  get(path: string): CachedFileContent | undefined {
     const entry = this.cache.get(path);
     if (entry) {
       this.hits++;
@@ -96,4 +96,4 @@ export class MemoryFileCache implements FileCache {
   }
 }
 
-export type { FileCache, FileCacheEntry }; // if FileCacheEntry is also needed
+export type { FileCache, CachedFileContent };

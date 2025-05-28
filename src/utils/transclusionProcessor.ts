@@ -1,6 +1,6 @@
 import type {
-  ParsedReference,
-  ResolvedPath,
+  TransclusionToken,
+  FileResolution,
   TransclusionOptions,
   TransclusionError
 } from '../types';
@@ -13,16 +13,16 @@ import { trimForTransclusion } from './contentProcessing';
  * Reference with its resolved path information
  */
 export interface ResolvedReference {
-  ref: ParsedReference;
-  resolved: ResolvedPath;
+  ref: TransclusionToken;
+  resolved: FileResolution;
 }
 
 /**
  * Reference with its content or error
  */
 export interface ProcessedReference {
-  ref: ParsedReference;
-  resolved: ResolvedPath;
+  ref: TransclusionToken;
+  resolved: FileResolution;
   content?: string;
   error?: TransclusionError;
 }
