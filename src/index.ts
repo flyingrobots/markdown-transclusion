@@ -5,8 +5,7 @@ export type {
   ParsedReference,
   ResolvedPath,
   FileCacheEntry,
-  FileCache,
-  TransclusionTransform
+  FileCache
 } from './types';
 
 export { parseTransclusionReferences } from './parser';
@@ -14,3 +13,5 @@ export { validatePath, isWithinBasePath, SecurityError, SecurityErrorCode } from
 export { resolvePath, substituteVariables } from './resolver';
 export { NoopFileCache, MemoryFileCache } from './fileCache';
 export { readFile, readFileSync, FileReaderError, FileReaderErrorCode } from './fileReader';
+export { TransclusionTransform } from './stream';
+export { processLine } from './transclude';
