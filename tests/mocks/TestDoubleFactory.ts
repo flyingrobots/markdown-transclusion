@@ -1,4 +1,5 @@
 import { MockFileCache } from './MockFileCache';
+import { MockFileSystem } from './MockFileSystem';
 import type { FileCache } from '../../src/types';
 
 /**
@@ -54,13 +55,21 @@ export class TestDoubleFactory {
   }
   
   /**
-   * Create a mock file reader (future use)
+   * Create a mock file reader using MockFileSystem
    */
-  static createMockFileReader() {
-    // Placeholder for future mock file reader
+  static createMockFileReader(files: Record<string, string> = {}) {
+    const fs = new MockFileSystem();
+    fs.addFiles(files);
+    
     return {
-      readFile: jest.fn(),
-      readFileSync: jest.fn()
+      readFile: (path: string) => fs.readFile(path),
+      readFileSync: (path: string) => fs.readFileSync(path),
+      exists: (path: string) => fs.exists(path),
+      addFile: (path: string, content: string) => fs.addFile(path, content),
+      removeFile: (path: string) => fs.removeFile(path),
+      setError: (path: string, error: Error) => fs.setError(path, error),
+      getAccessLog: () => fs.getAccessLog(),
+      clear: () => fs.clear()
     };
   }
   
