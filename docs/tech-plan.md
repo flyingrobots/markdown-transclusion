@@ -164,6 +164,7 @@ interface TransclusionOptions {
   variables?: Record<string, string>;
   strict?: boolean;
   validateOnly?: boolean;
+  cache?: FileCache;
 }
 
 interface TransclusionError {
@@ -289,6 +290,36 @@ class TransclusionTransform extends Transform {
 }
 ```
 
+## Caching Strategy
+
+The library implements an optional caching layer with no caching by default:
+
+- **No cache by default**: File reads go directly to disk for simplicity and predictability
+- **NoopFileCache**: Explicit null-object pattern for when a do-nothing cache is needed
+- **MemoryFileCache**: Opt-in performance optimization for scenarios with repeated file reads
+
+```typescript
+// No cache (default)
+const stream = createTransclusionStream({ basePath: './docs' });
+
+// Explicit no-op cache
+const stream = createTransclusionStream({ 
+  basePath: './docs',
+  cache: new NoopFileCache()
+});
+
+// Memory cache for performance-critical scenarios
+const stream = createTransclusionStream({
+  basePath: './docs', 
+  cache: new MemoryFileCache()
+});
+```
+
+Caching only makes sense when:
+- Processing the same files multiple times in a single run
+- Working with deeply nested transclusions with shared components
+- Operating in environments with slow disk I/O
+
 ## Dependencies
 
 **Runtime**: Zero external dependencies, uses only Node.js built-in modules (`stream`, `fs`, `path`)  
@@ -319,7 +350,8 @@ markdown-transclusion/
 ## Performance Characteristics
 
 - **Streaming Processing**: Constant memory usage regardless of input file size
-- **Memoization**: File contents cached to avoid redundant reads during recursive processing
+- **No Default Caching**: Direct file reads for predictability and simplicity
+- **Optional Memoization**: Opt-in file caching for scenarios with repeated reads
 - **Lazy Loading**: Files are only read when their transclusion references are encountered
 - **Async Operations**: Non-blocking file I/O prevents stream stalling
 
