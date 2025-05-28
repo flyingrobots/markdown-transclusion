@@ -9,6 +9,8 @@ import {
   findExistingFile,
   resolveToAbsolutePath
 } from './utils/pathResolution';
+import { substituteVariables as substituteVars } from './utils/pathTokens';
+import { resolveExtensions } from './utils/extensionResolver';
 
 /**
  * Default file extensions to try when no extension is provided
@@ -16,34 +18,9 @@ import {
 const DEFAULT_EXTENSIONS = ['.md', '.markdown'];
 
 /**
- * Pattern to match variable placeholders
- * Matches: {{varname}} with optional dashes, underscores, and alphanumeric characters
+ * Re-export substituteVariables from pathTokens for backward compatibility
  */
-const VARIABLE_PATTERN = /\{\{([a-zA-Z0-9_-]+)\}\}/g;
-
-/**
- * Substitute variables in a path string
- * @param path The path containing variable placeholders
- * @param variables The variables to substitute
- * @param strict Whether to throw on undefined variables
- * @returns Path with variables substituted
- */
-export function substituteVariables(
-  path: string, 
-  variables: Record<string, string> = {},
-  strict = false
-): string {
-  return path.replace(VARIABLE_PATTERN, (match, varName) => {
-    if (varName in variables) {
-      return variables[varName];
-    }
-    if (strict) {
-      throw new Error(`Undefined variable: ${varName}`);
-    }
-    // Return original placeholder if not strict mode
-    return match;
-  });
-}
+export { substituteVariables } from './utils/pathTokens';
 
 /**
  * Resolve a transclusion reference to an absolute file path
@@ -69,7 +46,7 @@ export function resolvePath(
   
   try {
     // Step 1: Substitute variables
-    const substitutedReference = substituteVariables(reference, variables, strict);
+    const substitutedReference = substituteVars(reference, variables, strict);
     
     // Step 2: Validate the reference path
     const validationResult = validateReferencePath(substitutedReference);
@@ -83,8 +60,8 @@ export function resolvePath(
       };
     }
 
-    // Step 3: Generate paths to try
-    const pathsToTry = generatePathsToTry(substitutedReference, extensions);
+    // Step 3: Generate paths to try using extension resolver
+    const pathsToTry = resolveExtensions(substitutedReference, extensions);
 
     // Step 4: Try each potential path
     for (const relativePath of pathsToTry) {
