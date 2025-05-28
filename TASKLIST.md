@@ -1,153 +1,144 @@
-✅ markdown-transclusion Remaining Task List (Post-Stream Phase)
+✅ markdown-transclusion Remaining Task List (Post-Refactor Phase)
 
-This list replaces the now-obsolete TASKLIST.md. It aligns directly with the implementation state of the repository as of commit ebb5994, and the requirements outlined in tech-plan.md.
+This list aligns with the current implementation state and requirements from tech-plan.md.
 
 **COMPLETED WORK:**
 - ✅ Core file reading with UTF-8 validation and BOM handling
 - ✅ In-memory file cache implementation (now optional)
 - ✅ Parser for transclusion references
-- ✅ Path resolver with variable substitution
+- ✅ Path resolver with variable substitution (fully modularized)
 - ✅ Security validation for path traversal
 - ✅ Stream-based transclusion processing
 - ✅ Line processor integration
 - ✅ NoopFileCache implementation for opt-in caching strategy
+- ✅ CLI implementation with argument parsing and structured logging
+- ✅ CLI test coverage with POSIX compliance
+- ✅ Type system cleanup and renaming for clarity
+- ✅ Comprehensive mock infrastructure for testing
+
+**RECENT REFACTORING ACHIEVEMENTS:**
+- ✅ Quest 1: Modularized path resolution (pathTokens.ts, extensionResolver.ts)
+- ✅ Quest 2: Improved CLI with proper argument parsing and logging
+- ✅ Quest 4: Cleaned up types (renamed for clarity, no dead code)
+- ✅ Side Quest: Built comprehensive mock testing infrastructure
 
 ⸻
 
-📂 PHASE 1: Integration & CLI
+📂 PHASE 1: Fix Failing Tests & Missing Features
 
-✅ Commit 1: TransclusionStream Integration Tests  
-	- [x]	Create tests/integration/stream.test.ts
-	- [x]	Add fixture input files with:
-	- [x]	Basic includes
-	- [x]	Recursive includes (depth > 1) - tests written but failing (feature not implemented)
-	- [x]	Missing files (warn mode)
-	- [x]	Multilingual substitutions ({{lang}})
-	- [x]	Circular references - tests written but detection not implemented
-	- [x]	Assert that streamed output matches expected merged Markdown
-	- [x]	Confirm cache hits/misses are reported if enabled
+✅ Task 1: Fix Stream Output Issues
+	- [ ]	Fix extra newlines in stream output (line 52 in stream.ts)
+	- [ ]	Update tests to expect correct output format
+	- [ ]	Ensure last line handling is correct
 
-Note: Recursive transclusion tests are failing because the feature isn't implemented yet. This needs to be done before tests will pass.
-
-Commit message: test(stream): add integration tests for recursive and multilingual transclusion
+Commit message: fix(stream): correct newline handling in stream output
 
 ⸻
 
-✅ Commit 2: CLI Interface Core
-	- [ ]	Create src/cli.ts with shebang: #!/usr/bin/env node
-	- [ ]	Parse CLI arguments manually (no deps):
-	- [ ]	--base, --vars, --output, --strict, --validate, --version, --help
-	- [ ]	Read input from file or stdin
-	- [ ]	Write output to file or stdout
-	- [ ]	Wire CLI to TransclusionStream
-	- [ ]	Pipe errors to stderr on failure
-	- [ ]	Exit with code 1 on critical error, 0 otherwise
+✅ Task 2: Implement Recursive Transclusion
+	- [ ]	Modify LineTranscluder to support recursive processing
+	- [ ]	Track depth to prevent infinite recursion
+	- [ ]	Process transcluded content recursively
+	- [ ]	Update failing integration tests
 
-Commit message: feat(cli): implement basic CLI with streaming and strict mode support
+Note: Tests are already written but failing - need implementation.
+
+Commit message: feat(transclude): implement recursive transclusion processing
 
 ⸻
 
-✅ Commit 3: CLI Test Coverage
-	- [ ]	Create tests/cli/cli.test.ts
-	- [ ]	Use Node’s child_process.spawnSync to simulate CLI calls
-	- [ ]	Test combinations:
-	- [ ]	stdin to stdout
-	- [ ]	file to stdout
-	- [ ]	stdin to file
-	- [ ]	--vars usage
-	- [ ]	--strict vs default (warn)
-	- [ ]	--validate mode (no output, just exit code)
-	- [ ]	Add malformed input test (missing bracket, invalid variable)
+✅ Task 3: Implement Circular Reference Detection
+	- [ ]	Track file inclusion stack (visitedFiles)
+	- [ ]	Detect when a file is already in the stack
+	- [ ]	Return error with clear path trace
+	- [ ]	Update tests to verify detection works
 
-Commit message: test(cli): add coverage for CLI usage scenarios and flags
+Commit message: feat(transclude): add circular reference detection
 
 ⸻
 
-📂 PHASE 2: Advanced Handling & Enhancements
+✅ Task 4: Fix Error Message Format
+	- [ ]	Change "Missing:" to "Error:" for consistency
+	- [ ]	Update all tests expecting error format
+	- [ ]	Ensure error messages are informative
 
-✅ Commit 4: Relative Includes within Transcluded Files
-	- [ ]	Modify resolver to optionally support relative references inside included files
-	- [ ]	Add parentPathStack to track nesting context
-	- [ ]	Resolve paths relative to parent if resolveRelativesFromParent is enabled
-	- [ ]	Document behavior and update tests
-
-Commit message: feat(resolver): support relative includes within nested transclusions
+Commit message: fix(transclude): standardize error message format
 
 ⸻
 
-✅ Commit 5: Circular Reference Chain Reporting
-	- [ ]	Track file inclusion stack (visitedFiles with order)
-	- [ ]	On loop detection, throw error with clear path trace
-	- [ ]	Example: Circular reference: A.md → B.md → A.md
-	- [ ]	Update recursive tests to assert error message content
+📂 PHASE 2: Advanced Features
 
-Commit message: feat(transclude): detect and trace circular transclusion chains
+✅ Task 5: Relative Includes within Transcluded Files
+	- [ ]	Modify resolver to support relative references from parent file
+	- [ ]	Add parentPath tracking in processing
+	- [ ]	Resolve paths relative to parent when enabled
+	- [ ]	Add tests for nested relative includes
+
+Commit message: feat(resolver): support relative includes from parent context
 
 ⸻
 
-✅ Commit 6: Markdown Snippet Extraction (Optional)
+✅ Task 6: Markdown Snippet Extraction (Optional)
 	- [ ]	Parse syntax like `![[file#heading]]`
-	- [ ]	Extract only that heading and its content (until next heading of same/higher level)
-	- [ ]	Fallback if heading not found (warn or strict)
-	- [ ]	Add new test fixtures for heading-based inclusion
+	- [ ]	Extract content for specific heading
+	- [ ]	Find heading and extract until next same/higher level
+	- [ ]	Add test fixtures for heading extraction
 
-Commit message: feat(parser): implement heading-specific snippet extraction for transclusions
+Commit message: feat(parser): implement heading-specific transclusion
 
 ⸻
 
-📂 PHASE 3: Docs & Developer Experience
+📂 PHASE 3: Documentation
 
-✅ Commit 7: Public API Documentation
+✅ Task 7: API Documentation
 	- [ ]	Create docs/api.md
-	- [ ]	Document createTransclusionStream, transclude, transcludeFile
-	- [ ]	Include TypeScript interface docs with JSDoc style
-	- [ ]	Add usage examples, error handling patterns
-	- [ ]	Mention BOM, encoding, and size handling
+	- [ ]	Document all public APIs
+	- [ ]	Include TypeScript interfaces
+	- [ ]	Add usage examples
+	- [ ]	Document error handling
 
-Commit message: docs(api): add full reference for programmatic API with examples
-
-⸻
-
-✅ Commit 8: CLI Docs + Examples
-	- [ ]	Update README.md with:
-	- [ ]	CLI quick start
-	- [ ]	Stream usage
-	- [ ]	Validation mode
-	- [ ]	Strict mode behavior
-	- [ ]	Multilingual usage (--vars lang=es)
-	- [ ]	Add sample pipeline: npx markdown-transclusion ... | pandoc
-
-Commit message: docs(readme): add detailed CLI usage and workflows
+Commit message: docs(api): add comprehensive API documentation
 
 ⸻
 
-✅ Commit 9: Developer Guide
+✅ Task 8: Update README
+	- [ ]	Add CLI usage examples
+	- [ ]	Document stream processing
+	- [ ]	Explain validation mode
+	- [ ]	Show multilingual examples
+	- [ ]	Add pipeline examples
+
+Commit message: docs(readme): update with CLI usage and examples
+
+⸻
+
+✅ Task 9: Contributing Guide
 	- [ ]	Create docs/contributing.md
-	- [ ]	Explain project layout and test strategy
-	- [ ]	Outline build commands and coverage thresholds
-	- [ ]	Mention file caching strategy and circular handling
-	- [ ]	Explain how to test and validate changes locally
+	- [ ]	Explain project structure
+	- [ ]	Document test strategy
+	- [ ]	Add development setup
+	- [ ]	Include code style guide
 
-Commit message: docs(contributing): add developer setup and contribution guidelines
+Commit message: docs(contributing): add developer contribution guide
 
 ⸻
 
-📂 PHASE 4: Final Polish & Release
+📂 PHASE 4: Release Preparation
 
-✅ Commit 10: Versioning & Release Pipeline
+✅ Task 10: Release Pipeline
 	- [ ]	Add CHANGELOG.md
-	- [ ]	Configure GitHub Actions for CI: test + lint on push
-	- [ ]	Set up npm release process with semantic-release or manual tagging
-	- [ ]	Publish initial version: 1.0.0
-	- [ ]	Create GitHub release with highlights
+	- [ ]	Setup GitHub Actions CI
+	- [ ]	Configure npm publishing
+	- [ ]	Create v1.0.0 release
+	- [ ]	Publish to npm
 
-Commit message: chore(release): prepare v1.0.0 with CI and changelog
+Commit message: chore(release): prepare v1.0.0 release
 
 ⸻
 
 ✅ DEFINITION OF DONE
-	- [ ]	CLI supports all features outlined in tech-plan.md
-	- [ ]	TransclusionStream has >95% test coverage
-	- [ ]	Recursive and multilingual content workflows tested
-	- [ ]	Error handling consistent across CLI, stream, and API
-	- [ ]	Project can power the Universal Charter multilingual pipeline
+	- [ ]	All tests passing (including recursive transclusion)
+	- [ ]	CLI fully functional with all options
+	- [ ]	>95% test coverage maintained
+	- [ ]	Documentation complete
+	- [ ]	Ready for Universal Charter project use
