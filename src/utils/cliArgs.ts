@@ -422,7 +422,7 @@ EXIT CODES:
   0  Success
   1  Error (file not found, transclusion errors with --strict, etc.)
 
-For more information, see: https://github.com/anthropics/markdown-transclusion`;
+For more information, see: https://github.com/flyingrobots/markdown-transclusion`;
 }
 
 /**

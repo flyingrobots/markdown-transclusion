@@ -34,4 +34,4 @@ This project is licensed under the MIT License.
 
 ---
 
-*Generated with [markdown-transclusion](https://github.com/anthropics/markdown-transclusion)*
+*Generated with [markdown-transclusion](https://github.com/flyingrobots/markdown-transclusion)*

@@ -11,7 +11,7 @@ We welcome contributions! Here's how you can help:
 ### Development Setup
 
 ```bash
-git clone https://github.com/anthropics/markdown-transclusion
+git clone https://github.com/flyingrobots/markdown-transclusion
 cd markdown-transclusion
 npm install
 npm test
@@ -24,4 +24,4 @@ npm test
 - Update documentation
 - Add examples when relevant
 
-See our full [Contributing Guide](https://github.com/anthropics/markdown-transclusion/blob/main/docs/contributing.md) for details.
+See our full [Contributing Guide](https://github.com/flyingrobots/markdown-transclusion/blob/main/docs/contributing.md) for details.

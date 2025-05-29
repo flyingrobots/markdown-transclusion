@@ -86,4 +86,4 @@ If you see "Error: File not found" messages:
 - Verify file names match exactly (case-sensitive)
 - Ensure the --base-path is set correctly if running from elsewhere
 
-For more help, see the [main documentation](https://github.com/anthropics/markdown-transclusion).
+For more help, see the [main documentation](https://github.com/flyingrobots/markdown-transclusion).

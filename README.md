@@ -169,7 +169,7 @@ We include a complete example project:
 
 ```bash
 # Clone the repository
-git clone https://github.com/anthropics/markdown-transclusion.git
+git clone https://github.com/flyingrobots/markdown-transclusion.git
 cd markdown-transclusion/examples/basic
 
 # Run the example
@@ -360,8 +360,8 @@ We welcome contributions! Please see our [Contributing Guide](./docs/contributin
 
 ## Support
 
-- 🐛 [Report bugs](https://github.com/anthropics/markdown-transclusion/issues)
-- 💡 [Request features](https://github.com/anthropics/markdown-transclusion/discussions)
+- 🐛 [Report bugs](https://github.com/flyingrobots/markdown-transclusion/issues)
+- 💡 [Request features](https://github.com/flyingrobots/markdown-transclusion/discussions)
 - 📚 [Read the docs](./docs/)
 - ⭐ Star the project on GitHub!
 
@@ -391,6 +391,8 @@ Benchmarks on a MacBook Pro M1:
 
 ## License
 
-MIT © Anthropic
+MIT License
+
+Copyright © 2025 J. Kirby Ross a.k.a. flyingrobots
 
 See [LICENSE](./LICENSE) for details.
