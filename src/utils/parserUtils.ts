@@ -107,26 +107,68 @@ export function maskHtmlComments(text: string, mask: CharacterMask): void {
  * Find transclusion tokens in text
  */
 export function findTransclusionTokens(text: string): Token[] {
-  // eslint-disable-next-line no-useless-escape
-  const TRANSCLUSION_PATTERN = /!\[\[([^\[\]]+?)(?:#([^\[\]]+?))?\]\]/g;
-  const matches = findAllMatches(text, TRANSCLUSION_PATTERN);
   const tokens: Token[] = [];
+  let pos = 0;
   
-  for (const { match, start, end } of matches) {
-    const path = match[1].trim();
-    const heading = match[2]?.trim();
+  while (pos < text.length) {
+    // Find the start of a transclusion
+    const startPattern = text.indexOf('![[', pos);
+    if (startPattern === -1) break;
+    
+    // Find matching ]] by counting brackets
+    let bracketCount = 1;
+    let i = startPattern + 3;
+    let endPattern = -1;
+    
+    while (i < text.length - 1 && bracketCount > 0) {
+      if (text[i] === '[' && text[i + 1] === '[') {
+        bracketCount++;
+        i += 2;
+      } else if (text[i] === ']' && text[i + 1] === ']') {
+        bracketCount--;
+        if (bracketCount === 0) {
+          endPattern = i;
+        }
+        i += 2;
+      } else {
+        i++;
+      }
+    }
+    
+    if (endPattern === -1) {
+      // No matching ]] found
+      pos = startPattern + 3;
+      continue;
+    }
+    
+    // Extract the content between ![[ and ]]
+    const content = text.substring(startPattern + 3, endPattern);
+    
+    // Check for heading separator
+    const headingIndex = content.indexOf('#');
+    let path: string;
+    let heading: string | undefined;
+    
+    if (headingIndex !== -1) {
+      path = content.substring(0, headingIndex).trim();
+      heading = content.substring(headingIndex + 1).trim();
+    } else {
+      path = content.trim();
+    }
     
     // Skip empty paths
     if (path) {
       tokens.push({
         type: 'transclusion',
-        value: match[0],
-        startIndex: start,
-        endIndex: end,
+        value: text.substring(startPattern, endPattern + 2),
+        startIndex: startPattern,
+        endIndex: endPattern + 2,
         path,
         ...(heading && { heading })
       });
     }
+    
+    pos = endPattern + 2;
   }
   
   return tokens;
