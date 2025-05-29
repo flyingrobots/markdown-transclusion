@@ -1,6 +1,7 @@
 import { Transform, TransformCallback } from 'stream';
 import { TextDecoder } from 'util';
 import { LineTranscluder } from './utils/LineTranscluder';
+import { MemoryFileCache } from './fileCache';
 import type { TransclusionOptions, TransclusionError } from './types';
 
 export class TransclusionTransform extends Transform {
@@ -12,8 +13,17 @@ export class TransclusionTransform extends Transform {
 
   constructor(options: TransclusionOptions) {
     super({ readableObjectMode: false, writableObjectMode: false });
-    this.options = options;
-    this.lineTranscluder = new LineTranscluder(options);
+    
+    // Automatically enable MemoryFileCache if conditions are met
+    const processedOptions = { ...options };
+    if (!options.cache && 
+        !options.validateOnly && 
+        (options.maxDepth === undefined || options.maxDepth > 1)) {
+      processedOptions.cache = new MemoryFileCache();
+    }
+    
+    this.options = processedOptions;
+    this.lineTranscluder = new LineTranscluder(processedOptions);
     this.decoder = new TextDecoder('utf-8', { fatal: false });
   }
   
@@ -67,6 +77,6 @@ export class TransclusionTransform extends Transform {
   }
 }
 
-export function createTransclusionStream(options: TransclusionOptions): TransclusionTransform {
+export function createTransclusionStream(options: TransclusionOptions = {}): TransclusionTransform {
   return new TransclusionTransform(options);
 }

@@ -257,6 +257,79 @@ describe('MemoryFileCache', () => {
     });
   });
 
+  describe('maxEntrySize', () => {
+    it('should cache content smaller than maxEntrySize', () => {
+      const cache = new MemoryFileCache(100); // 100 bytes max
+      const smallContent = 'a'.repeat(50); // 50 bytes
+      
+      cache.set('/small.md', smallContent);
+      
+      const result = cache.get('/small.md');
+      expect(result).toBeDefined();
+      expect(result?.content).toBe(smallContent);
+    });
+
+    it('should not cache content larger than maxEntrySize', () => {
+      const cache = new MemoryFileCache(100); // 100 bytes max
+      const largeContent = 'a'.repeat(150); // 150 bytes
+      
+      cache.set('/large.md', largeContent);
+      
+      const result = cache.get('/large.md');
+      expect(result).toBeUndefined();
+      expect(cache.stats().size).toBe(0);
+    });
+
+    it('should cache content exactly at maxEntrySize', () => {
+      const cache = new MemoryFileCache(100); // 100 bytes max
+      const exactContent = 'a'.repeat(100); // Exactly 100 bytes
+      
+      cache.set('/exact.md', exactContent);
+      
+      const result = cache.get('/exact.md');
+      expect(result).toBeDefined();
+      expect(result?.content).toBe(exactContent);
+    });
+
+    it('should use default maxEntrySize of 1MB when not specified', () => {
+      const cache = new MemoryFileCache(); // Default 1MB
+      const smallContent = 'a'.repeat(1000); // 1KB
+      const largeContent = 'a'.repeat(1024 * 1024 + 1); // 1MB + 1 byte
+      
+      cache.set('/small.md', smallContent);
+      cache.set('/large.md', largeContent);
+      
+      expect(cache.get('/small.md')).toBeDefined();
+      expect(cache.get('/large.md')).toBeUndefined();
+    });
+
+    it('should handle UTF-8 multi-byte characters correctly', () => {
+      const cache = new MemoryFileCache(12); // 12 bytes max
+      const content3Bytes = '你'; // 3 bytes
+      const content12Bytes = '你好世界'; // 12 bytes (4 chars * 3 bytes)
+      const content15Bytes = '你好世界!'; // 15 bytes
+      
+      cache.set('/3bytes.md', content3Bytes);
+      cache.set('/12bytes.md', content12Bytes);
+      cache.set('/15bytes.md', content15Bytes);
+      
+      expect(cache.get('/3bytes.md')).toBeDefined();
+      expect(cache.get('/12bytes.md')).toBeDefined();
+      expect(cache.get('/15bytes.md')).toBeUndefined();
+    });
+
+    it('should not affect getTotalSize when large entries are rejected', () => {
+      const cache = new MemoryFileCache(50);
+      
+      cache.set('/small1.md', 'a'.repeat(20)); // 20 bytes - cached
+      cache.set('/large.md', 'b'.repeat(100)); // 100 bytes - rejected
+      cache.set('/small2.md', 'c'.repeat(30)); // 30 bytes - cached
+      
+      expect(cache.getTotalSize()).toBe(50); // Only the cached entries
+      expect(cache.stats().size).toBe(2);
+    });
+  });
+
   describe('edge cases', () => {
     it('should handle rapid get/set operations', () => {
       const iterations = 1000;

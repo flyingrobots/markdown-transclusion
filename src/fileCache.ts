@@ -33,6 +33,15 @@ export class MemoryFileCache implements FileCache {
   private cache = new Map<string, CachedFileContent>();
   private hits = 0;
   private misses = 0;
+  private maxEntrySize: number;
+
+  /**
+   * Create a new memory file cache
+   * @param maxEntrySize Maximum size in bytes for a single cache entry (default: 1MB)
+   */
+  constructor(maxEntrySize: number = 1024 * 1024) {
+    this.maxEntrySize = maxEntrySize;
+  }
 
   /**
    * Get cached content for a path
@@ -55,10 +64,17 @@ export class MemoryFileCache implements FileCache {
    * @param content The file content
    */
   set(path: string, content: string): void {
+    const size = Buffer.byteLength(content, 'utf8');
+    
+    // Skip caching if the content exceeds maxEntrySize
+    if (size > this.maxEntrySize) {
+      return;
+    }
+    
     this.cache.set(path, {
       content,
       timestamp: Date.now(),
-      size: Buffer.byteLength(content, 'utf8')
+      size
     });
   }
 

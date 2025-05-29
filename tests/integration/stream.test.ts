@@ -374,6 +374,92 @@ describe('TransclusionStream Integration Tests', () => {
     });
   });
 
+  describe('Automatic cache enabling', () => {
+    it('should automatically enable MemoryFileCache when maxDepth > 1 and no cache provided', async () => {
+      const transform = new TransclusionTransform({
+        basePath: fixturesPath,
+        maxDepth: 5
+      });
+      
+      // Access private property to check if cache was set
+      const options = (transform as any).options;
+      expect(options.cache).toBeDefined();
+      expect(options.cache).toBeInstanceOf(MemoryFileCache);
+    });
+
+    it('should automatically enable MemoryFileCache when maxDepth is undefined', async () => {
+      const transform = new TransclusionTransform({
+        basePath: fixturesPath
+        // maxDepth not specified, defaults to 10
+      });
+      
+      const options = (transform as any).options;
+      expect(options.cache).toBeDefined();
+      expect(options.cache).toBeInstanceOf(MemoryFileCache);
+    });
+
+    it('should not enable cache when maxDepth is 1', async () => {
+      const transform = new TransclusionTransform({
+        basePath: fixturesPath,
+        maxDepth: 1
+      });
+      
+      const options = (transform as any).options;
+      expect(options.cache).toBeUndefined();
+    });
+
+    it('should not enable cache when validateOnly is true', async () => {
+      const transform = new TransclusionTransform({
+        basePath: fixturesPath,
+        validateOnly: true,
+        maxDepth: 5
+      });
+      
+      const options = (transform as any).options;
+      expect(options.cache).toBeUndefined();
+    });
+
+    it('should not override user-provided cache', async () => {
+      const userCache = new MockFileCache();
+      const transform = new TransclusionTransform({
+        basePath: fixturesPath,
+        cache: userCache,
+        maxDepth: 5
+      });
+      
+      const options = (transform as any).options;
+      expect(options.cache).toBe(userCache);
+      expect(options.cache).not.toBeInstanceOf(MemoryFileCache);
+    });
+
+    it('should cache files when auto-enabled during recursive processing', async () => {
+      // Create test files with multiple levels
+      await fs.writeFile(
+        path.join(fixturesPath, 'auto-cache-1.md'),
+        '# Level 1\n![[auto-cache-2]]'
+      );
+      await fs.writeFile(
+        path.join(fixturesPath, 'auto-cache-2.md'),
+        '# Level 2\n![[simple]]'
+      );
+      
+      const input = 'Start\n![[auto-cache-1]]\n![[simple]]\nEnd';
+      const result = await processString(input, {
+        basePath: fixturesPath,
+        // No cache provided, should auto-enable
+        maxDepth: 5
+      });
+      
+      expect(result).toContain('# Level 1');
+      expect(result).toContain('# Level 2');
+      expect(result).toContain('This is a simple test file');
+      
+      // Cleanup
+      await fs.unlink(path.join(fixturesPath, 'auto-cache-1.md'));
+      await fs.unlink(path.join(fixturesPath, 'auto-cache-2.md'));
+    });
+  });
+
   describe('Stream characteristics', () => {
     it('should handle large files without loading entire content in memory', async () => {
       // Create a large file
