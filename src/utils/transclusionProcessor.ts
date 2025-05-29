@@ -30,6 +30,9 @@ export interface ProcessedReference {
 
 /**
  * Parse and resolve all transclusion references in a line
+ * @param line The line containing transclusion references
+ * @param options Transclusion options (basePath defaults to process.cwd() if not specified)
+ * @param parentPath Parent file path for relative resolution
  */
 export function parseAndResolveRefs(
   line: string,
@@ -40,7 +43,14 @@ export function parseAndResolveRefs(
   
   return refs.map(ref => ({
     ref,
-    resolved: resolvePath(ref.path, { ...options, parentPath })
+    resolved: resolvePath(ref.path, { 
+      // Provide default basePath as process.cwd() since resolvePath requires it
+      basePath: options.basePath || process.cwd(),
+      extensions: options.extensions,
+      variables: options.variables,
+      strict: options.strict,
+      parentPath 
+    })
   }));
 }
 

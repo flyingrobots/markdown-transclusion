@@ -1,7 +1,11 @@
 import type { Transform } from 'stream';
 
 export interface TransclusionOptions {
-  basePath?: string; // Defaults to process.cwd()
+  /**
+   * Base directory for resolving relative paths.
+   * Defaults to process.cwd() when not specified.
+   */
+  basePath?: string;
   extensions?: string[];
   variables?: Record<string, string>;
   strict?: boolean;

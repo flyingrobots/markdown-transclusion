@@ -88,12 +88,12 @@ describe('Type Definitions', () => {
     expect(minimalOptions).toBeDefined();
   });
 
-  it('should require basePath in TransclusionOptions', () => {
-    // @ts-expect-error - basePath is required
+  it('should allow empty TransclusionOptions since basePath is optional', () => {
+    // This should compile fine - basePath is optional
     const emptyOptions: TransclusionOptions = {};
     expect(emptyOptions).toBeDefined();
     
-    // This should compile fine
+    // This should also compile fine
     const validOptions: TransclusionOptions = { basePath: '/path' };
     expect(validOptions).toBeDefined();
   });
