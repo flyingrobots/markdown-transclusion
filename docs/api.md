@@ -12,9 +12,38 @@ npm install markdown-transclusion
 
 ## Core API
 
+### processLine(line, options)
+
+Processes a single line of text for transclusions. This is the core function used internally by the stream and other convenience methods.
+
+```typescript
+import { processLine } from 'markdown-transclusion';
+
+const result = await processLine('Before ![[section]] after', {
+  basePath: './docs',
+  extensions: ['md']
+});
+
+console.log(result.output);  // "Before <content of section.md> after"
+console.log(result.errors);  // Array of any errors encountered
+```
+
+**Returns:**
+```typescript
+interface TransclusionLineResult {
+  output: string;              // Processed line with transclusions resolved
+  errors: TransclusionError[]; // Array of errors encountered
+}
+```
+
+**CLI Equivalent:**
+```bash
+echo "Before ![[section]] after" | markdown-transclusion --base-path ./docs
+```
+
 ### createTransclusionStream(options)
 
-Creates a transform stream that processes transclusions.
+Creates a Node.js transform stream that processes transclusions. Ideal for processing large files or piping data.
 
 ```typescript
 import { createTransclusionStream } from 'markdown-transclusion';
@@ -33,42 +62,43 @@ const stream = createTransclusionStream({
 ```typescript
 interface TransclusionOptions {
   basePath: string;              // Base directory for resolving references
-  extensions?: string[];         // File extensions to try (default: ['.md', '.markdown'])
+  extensions?: string[];         // File extensions to try (default: ['md', 'markdown'])
   variables?: Record<string, string>; // Variables for substitution
-  strict?: boolean;              // Throw on errors (default: false)
+  strict?: boolean;              // Exit with error on transclusion failure (default: false)
   cache?: FileCache;             // Optional file cache implementation
   maxDepth?: number;             // Maximum recursion depth (default: 10)
-  validateOnly?: boolean;        // Only validate, don't process content
+  validateOnly?: boolean;        // Only validate, don't output content (default: false)
 }
 ```
 
-### transclude(input, options)
+**Returns:** A Node.js Transform stream instance
 
-Convenience function for processing a string.
-
-```typescript
-import { transclude } from 'markdown-transclusion';
-
-const result = await transclude('# Doc\n![[section]]', {
-  basePath: './docs'
-});
-
-console.log(result.content);  // Processed content
-console.log(result.errors);   // Any errors encountered
+**CLI Equivalent:**
+```bash
+markdown-transclusion input.md --base-path ./docs
 ```
 
-### transcludeFile(filePath, options)
+### TransclusionTransform class
 
-Convenience function for processing a file.
+The transform stream class that extends Node.js Transform stream.
 
 ```typescript
-import { transcludeFile } from 'markdown-transclusion';
+import { TransclusionTransform } from 'markdown-transclusion';
 
-const result = await transcludeFile('./template.md', {
+const transform = new TransclusionTransform({
   basePath: './docs',
-  variables: { version: '1.0' }
+  maxDepth: 5
+});
+
+// Access errors after processing
+transform.on('finish', () => {
+  const errors = transform.errors;
+  console.log(`Processed with ${errors.length} errors`);
 });
 ```
+
+**Properties:**
+- `errors: TransclusionError[]` - Array of errors encountered during processing
 
 ## Error Handling
 
@@ -245,11 +275,41 @@ Full TypeScript support with exported types:
 import type {
   TransclusionOptions,
   TransclusionError,
-  TransclusionResult,
+  TransclusionLineResult,
   TransclusionTransform,
   FileCache,
-  CachedFileContent
+  CachedFileContent,
+  TransclusionToken,
+  FileResolution
 } from 'markdown-transclusion';
+```
+
+### Main Types
+
+```typescript
+// Result from processLine function
+interface TransclusionLineResult {
+  output: string;
+  errors: TransclusionError[];
+}
+
+// Parsed transclusion reference
+interface TransclusionToken {
+  raw: string;        // Original ![[...]] text
+  path: string;       // File path extracted
+  heading?: string;   // Optional heading after #
+  start: number;      // Start position in line
+  end: number;        // End position in line
+}
+
+// Resolved file information
+interface FileResolution {
+  absolutePath: string;
+  exists: boolean;
+  originalReference: string;
+  error?: string;
+  errorCode?: string;
+}
 ```
 
 ## Examples
@@ -257,48 +317,129 @@ import type {
 ### Multilingual Documentation
 
 ```typescript
+import { createReadStream, createWriteStream } from 'fs';
+import { pipeline } from 'stream/promises';
+import { createTransclusionStream } from 'markdown-transclusion';
+
 const languages = ['en', 'es', 'fr', 'de'];
 
 for (const lang of languages) {
-  await transcludeFile('template.md', {
+  const stream = createTransclusionStream({
     basePath: './docs',
-    variables: { lang },
-    output: `output-${lang}.md`
+    variables: { lang }
   });
+  
+  await pipeline(
+    createReadStream('template.md'),
+    stream,
+    createWriteStream(`output-${lang}.md`)
+  );
 }
+```
+
+**CLI Equivalent:**
+```bash
+for lang in en es fr de; do
+  markdown-transclusion template.md --variables "lang=$lang" -o "output-$lang.md"
+done
 ```
 
 ### Validation Mode
 
 ```typescript
-const result = await transclude(content, {
+import { createTransclusionStream } from 'markdown-transclusion';
+import { createReadStream } from 'fs';
+
+const stream = createTransclusionStream({
   basePath: './docs',
   validateOnly: true
 });
 
-if (result.errors.length > 0) {
-  console.error('Invalid transclusions found');
-}
+const errors: TransclusionError[] = [];
+
+stream.on('finish', () => {
+  if (stream.errors.length > 0) {
+    console.error(`Found ${stream.errors.length} invalid transclusions`);
+    stream.errors.forEach(err => {
+      console.error(`- ${err.path}: ${err.message}`);
+    });
+    process.exit(1);
+  }
+});
+
+createReadStream('document.md').pipe(stream);
+```
+
+**CLI Equivalent:**
+```bash
+markdown-transclusion document.md --validate-only --strict
 ```
 
 ### Custom Error Handling
 
 ```typescript
-const result = await transclude(content, {
-  basePath: './docs',
-  strict: false
-});
+import { processLine } from 'markdown-transclusion';
 
-result.errors.forEach(error => {
-  switch (error.code) {
-    case 'FILE_NOT_FOUND':
-      console.warn(`Missing file: ${error.path}`);
-      break;
-    case 'CIRCULAR_REFERENCE':
-      console.error(`Circular reference: ${error.message}`);
-      break;
-    default:
-      console.error(`Error: ${error.message}`);
-  }
-});
+const lines = content.split('\n');
+const output: string[] = [];
+let hasErrors = false;
+
+for (const line of lines) {
+  const result = await processLine(line, {
+    basePath: './docs',
+    strict: false
+  });
+  
+  output.push(result.output);
+  
+  result.errors.forEach(error => {
+    switch (error.code) {
+      case 'FILE_NOT_FOUND':
+        console.warn(`Missing file: ${error.path}`);
+        break;
+      case 'CIRCULAR_REFERENCE':
+        console.error(`Circular reference: ${error.message}`);
+        hasErrors = true;
+        break;
+      case 'MAX_DEPTH_EXCEEDED':
+        console.error(`Too deep: ${error.message}`);
+        hasErrors = true;
+        break;
+      default:
+        console.error(`Error: ${error.message}`);
+    }
+  });
+}
+
+const finalOutput = output.join('\n');
+```
+
+### CLI Examples
+
+```bash
+# Basic usage
+markdown-transclusion input.md
+
+# With options
+markdown-transclusion input.md --base-path ./docs --output output.md
+
+# Variable substitution
+markdown-transclusion template.md --variables "version=2.0,lang=en"
+
+# Validation only
+markdown-transclusion document.md --validate-only
+
+# Strict mode (exit on error)
+markdown-transclusion input.md --strict
+
+# Custom log level
+markdown-transclusion input.md --log-level WARN
+
+# Piping
+cat input.md | markdown-transclusion > output.md
+
+# Multiple files (using shell)
+for file in docs/*.md; do
+  markdown-transclusion "$file" -o "processed/$(basename $file)"
+done
 ```
