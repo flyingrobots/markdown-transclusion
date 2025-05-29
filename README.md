@@ -276,6 +276,32 @@ jobs:
 
 ### Core Functions
 
+#### `transclude(input, options)`
+
+Process a complete string, replacing all transclusion references.
+
+```typescript
+const result = await transclude('# Doc\n![[intro]]\n![[conclusion]]', {
+  basePath: './docs'
+});
+// result.content: "# Doc\n<contents of intro>\n<contents of conclusion>"
+// result.errors: Array of any errors
+// result.processedFiles: Array of processed file paths
+```
+
+#### `transcludeFile(filePath, options)`
+
+Process a file, replacing all transclusion references.
+
+```typescript
+const result = await transcludeFile('./README.md', {
+  variables: { version: '2.0' }
+});
+// result.content: Full processed content
+// result.errors: Array of any errors
+// result.processedFiles: Array of all processed files
+```
+
 #### `processLine(line, options)`
 
 Process a single line of text for transclusions.

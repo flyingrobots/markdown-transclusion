@@ -12,6 +12,55 @@ npm install markdown-transclusion
 
 ## Core API
 
+### transclude(input, options)
+
+Processes a complete Markdown string, replacing all transclusion references with file contents.
+
+```typescript
+import { transclude } from 'markdown-transclusion';
+
+const result = await transclude(`# My Document
+![[intro]]
+Some content here.
+![[conclusion]]`, {
+  basePath: './docs',
+  variables: { version: '2.0' }
+});
+
+console.log(result.content);       // Fully processed content
+console.log(result.errors);        // Array of any errors
+console.log(result.processedFiles); // Array of all files that were processed
+```
+
+**Returns:**
+```typescript
+interface TransclusionResult {
+  content: string;               // Processed content with all transclusions resolved
+  errors: TransclusionError[];   // Array of errors encountered
+  processedFiles: string[];      // Array of absolute paths to all processed files
+}
+```
+
+### transcludeFile(filePath, options)
+
+Processes a Markdown file, replacing all transclusion references with file contents.
+
+```typescript
+import { transcludeFile } from 'markdown-transclusion';
+
+const result = await transcludeFile('./README.md', {
+  variables: { lang: 'es' }
+});
+
+console.log(result.content);       // Fully processed content
+console.log(result.errors);        // Array of any errors
+console.log(result.processedFiles); // Includes README.md and all transcluded files
+```
+
+**Note:** If `basePath` is not specified in options, it defaults to the directory containing the file being processed.
+
+**Returns:** Same as `transclude()` - a `TransclusionResult` object.
+
 ### processLine(line, options)
 
 Processes a single line of text for transclusions. This is the core function used internally by the stream and other convenience methods.
