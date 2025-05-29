@@ -16,5 +16,7 @@ module.exports = {
     '/node_modules/',
     '/tests/helpers/',
     '/tests/testUtils/',
+    '/tests/utils/',
+    '/tests/mocks/',
   ],
 };
