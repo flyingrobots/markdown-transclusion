@@ -107,6 +107,7 @@ export function maskHtmlComments(text: string, mask: CharacterMask): void {
  * Find transclusion tokens in text
  */
 export function findTransclusionTokens(text: string): Token[] {
+  // eslint-disable-next-line no-useless-escape
   const TRANSCLUSION_PATTERN = /!\[\[([^\[\]]+?)(?:#([^\[\]]+?))?\]\]/g;
   const matches = findAllMatches(text, TRANSCLUSION_PATTERN);
   const tokens: Token[] = [];

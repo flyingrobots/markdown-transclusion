@@ -49,7 +49,7 @@ export class TransclusionTransform extends Transform {
     }
   }
 
-  private async processLine(line: string, isLastLine: boolean): Promise<void> {
+  private async processLine(line: string, _isLastLine: boolean): Promise<void> {
     // Delegate all processing logic to LineTranscluder
     const processedLine = await this.lineTranscluder.processLine(line);
     

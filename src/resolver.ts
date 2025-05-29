@@ -1,9 +1,7 @@
 import * as path from 'path';
 import * as fs from 'fs';
-import type { FileResolution, TransclusionOptions } from './types';
-import { validatePath, isWithinBasePath } from './security';
+import type { FileResolution } from './types';
 import {
-  generatePathsToTry,
   validateReferencePath,
   validateWithinBase,
   findExistingFile,

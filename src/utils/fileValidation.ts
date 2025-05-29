@@ -1,6 +1,6 @@
 import { Stats } from 'fs';
 import { Result, Ok, Err } from './result';
-import { FileReaderError, FileReaderErrorCode } from '../fileReader';
+import { FileReaderErrorCode } from '../fileReader';
 
 /**
  * Validation result for file checks

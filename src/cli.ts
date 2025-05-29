@@ -5,8 +5,7 @@ import { resolve } from 'path';
 import { pipeline } from 'stream/promises';
 import { TransclusionTransform } from './stream';
 import { parseCliArgs, getHelpText, getVersionText } from './utils/cliArgs';
-import { createLogger, StreamLogger, LogLevel } from './utils/logger';
-import { isErr } from './utils/result';
+import { StreamLogger, LogLevel } from './utils/logger';
 import type { TransclusionOptions } from './types';
 
 /**

@@ -1,12 +1,5 @@
-import * as fs from 'fs';
-import { promisify } from 'util';
 import type { FileCache } from './types';
 import { safeReadFile, safeReadFileSync } from './utils/safeFileReader';
-import { unwrap } from './utils/result';
-import { FileValidationError } from './utils/fileValidation';
-
-const readFileAsync = promisify(fs.readFile);
-const statAsync = promisify(fs.stat);
 
 // Maximum file size for buffered reading (1MB)
 // Larger files should use streaming (to be implemented in later commits)

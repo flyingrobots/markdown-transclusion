@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import { promisify } from 'util';
-import { Result, Ok, Err, andThen } from './result';
+import { Result, Ok, Err } from './result';
 import { 
   validateIsFile, 
   validateFileSize, 
@@ -9,7 +9,7 @@ import {
   FileValidationError 
 } from './fileValidation';
 import { processFileContent } from './contentProcessing';
-import { FileReaderError, FileReaderErrorCode } from '../fileReader';
+import { FileReaderErrorCode } from '../fileReader';
 
 const readFileAsync = promisify(fs.readFile);
 const statAsync = promisify(fs.stat);

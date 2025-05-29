@@ -162,7 +162,7 @@ function parseLongFlag(
       break;
       
     case 'max-depth':
-    case 'depth':
+    case 'depth': {
       if (nextIndex >= args.length) {
         return Err({
           code: CliArgsErrorCode.MISSING_VALUE,
@@ -181,9 +181,10 @@ function parseLongFlag(
       result.maxDepth = depth;
       nextIndex++;
       break;
+    }
       
     case 'variables':
-    case 'vars':
+    case 'vars': {
       if (nextIndex >= args.length || args[nextIndex].startsWith('-')) {
         return Err({
           code: CliArgsErrorCode.MISSING_VALUE,
@@ -202,9 +203,10 @@ function parseLongFlag(
       result.variables = varsResult.value;
       nextIndex++;
       break;
+    }
       
     case 'log-level':
-    case 'log':
+    case 'log': {
       if (nextIndex >= args.length || args[nextIndex].startsWith('-')) {
         return Err({
           code: CliArgsErrorCode.MISSING_VALUE,
@@ -223,6 +225,7 @@ function parseLongFlag(
       result.logLevel = levelResult.value;
       nextIndex++;
       break;
+    }
       
     default:
       return Err({

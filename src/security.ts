@@ -143,6 +143,7 @@ export function sanitizePath(filePath: string): string {
   let sanitized = filePath.replace(/\0/g, '');
   
   // Remove any control characters
+  // eslint-disable-next-line no-control-regex
   sanitized = sanitized.replace(/[\x00-\x1f\x7f]/g, '');
   
   // Normalize path separators

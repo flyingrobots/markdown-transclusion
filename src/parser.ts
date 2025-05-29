@@ -9,22 +9,9 @@ import {
 } from './utils/parserUtils';
 
 /**
- * Regular expression to match transclusion syntax
- * Matches: ![[path]] or ![[path#heading]]
- * Ensures path is not empty and doesn't contain brackets
- */
-const TRANSCLUSION_PATTERN = /!\[\[([^\[\]]+?)(?:#([^\[\]]+?))?\]\]/g;
-
-/**
- * Regular expression to match code blocks and inline code
+ * Regular expression to match code blocks
  */
 const CODE_FENCE_PATTERN = /^```[\s\S]*?^```/gm;
-const INLINE_CODE_PATTERN = /`[^`\n]+`/g;
-
-/**
- * Regular expression to match HTML comments
- */
-const HTML_COMMENT_PATTERN = /<!--[\s\S]*?-->/g;
 
 /**
  * Parse transclusion references from a line of text

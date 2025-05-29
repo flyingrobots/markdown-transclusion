@@ -95,7 +95,7 @@ export class SilentLogger implements Logger {
     this.logs.push({ level: LogLevel.DEBUG, message, timestamp: new Date(), data });
   }
   
-  setLevel(level: LogLevel): void {
+  setLevel(_level: LogLevel): void {
     // No-op for silent logger
   }
   

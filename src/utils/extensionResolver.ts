@@ -55,7 +55,7 @@ export class ExplicitExtensionStrategy implements ExtensionStrategy {
     return path.extname(filePath) !== '';
   }
   
-  generatePaths(filePath: string, extensions: string[]): string[] {
+  generatePaths(filePath: string, _extensions: string[]): string[] {
     // Only try the exact path
     return [filePath];
   }

@@ -1,6 +1,5 @@
 import {
   parseAndResolveRefs,
-  readResolvedRefs,
   composeLineOutput,
   extractErrors,
   ProcessedReference
