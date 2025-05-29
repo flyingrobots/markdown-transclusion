@@ -136,7 +136,7 @@ flowchart TD
 **So that** I can maintain translations efficiently
 
 ```markdown
-![[intro-{{lang}}]]  <!-- Resolves to intro-en.md, intro-es.md, etc -->
+![[intro-${lang}]]  <!-- Resolves to intro-en.md, intro-es.md, etc -->
 ```
 
 ### F6: Heading-Specific Transclusion
@@ -171,24 +171,36 @@ interface TransclusionError {
   message: string;
   path: string;
   line?: number;
+  code?: string;
+}
+
+interface TransclusionResult {
+  content: string;
+  errors: TransclusionError[];
+  processedFiles: string[];
 }
 
 // Primary stream interface
 function createTransclusionStream(
   options?: TransclusionOptions
-): Transform;
+): TransclusionTransform;
+
+// The transform stream class with error tracking
+class TransclusionTransform extends Transform {
+  errors: TransclusionError[];  // Accumulated errors during processing
+}
 
 // Convenience function for simple use cases
 function transclude(
   input: string, 
   options?: TransclusionOptions
-): Promise<string>;
+): Promise<TransclusionResult>;
 
 // File-based convenience function
 function transcludeFile(
   filePath: string,
   options?: TransclusionOptions  
-): Promise<string>;
+): Promise<TransclusionResult>;
 ```
 
 ## CLI Interface
@@ -218,7 +230,30 @@ npx markdown-transclusion charter-template.md \
 # Pipeline with other tools
 npx markdown-transclusion charter-template.md --variables "lang=es" | \
   pandoc --from markdown --to pdf > charter-es.pdf
+
+# Control verbosity with log levels
+npx markdown-transclusion input.md \
+  --log-level ERROR  # Only show errors
+  
+npx markdown-transclusion input.md \
+  --log-level DEBUG  # Show detailed processing information
 ```
+
+### CLI Flags Reference
+
+| Flag | Short | Description | Default |
+|------|-------|-------------|---------|
+| `--input` | `-i` | Input file path | stdin |
+| `--output` | `-o` | Output file path | stdout |
+| `--base-path` | `-b` | Base directory for resolving references | cwd |
+| `--variables` | | Variable substitutions (key=value,key2=value2) | {} |
+| `--extensions` | `-e` | File extensions to try (comma-separated) | md,markdown |
+| `--max-depth` | `-d` | Maximum recursion depth | 10 |
+| `--strict` | `-s` | Exit on any error | false |
+| `--validate-only` | | Only validate references, don't output | false |
+| `--log-level` | | Verbosity: ERROR, WARN, INFO, DEBUG | INFO |
+| `--help` | `-h` | Show help message | |
+| `--version` | `-v` | Show version number | |
 
 ## Usage Examples
 
@@ -248,11 +283,31 @@ const result = await transclude(markdownContent, {
   basePath: './sections',
   variables: { lang: 'es' }
 });
+console.log(result.content);       // Processed content
+console.log(result.errors);        // Array of errors
+console.log(result.processedFiles); // Files that were processed
+
+// File-based convenience function
+const fileResult = await transcludeFile('./docs/index.md', {
+  variables: { version: '2.0' }
+});
+// Note: basePath defaults to the file's directory
 
 // Error handling with streams
 transclusionStream.on('error', (error) => {
   console.error(`Transclusion error: ${error.message}`);
   process.exit(1);
+});
+
+// Access accumulated errors after processing
+transclusionStream.on('finish', () => {
+  const errors = transclusionStream.errors;
+  if (errors.length > 0) {
+    console.error(`Found ${errors.length} errors during processing`);
+    errors.forEach(err => {
+      console.error(`[${err.path}] ${err.message}`);
+    });
+  }
 });
 ```
 
@@ -292,39 +347,73 @@ class TransclusionTransform extends Transform {
 
 ## Caching Strategy
 
-The library implements an optional caching layer with no caching by default:
+The library implements a smart caching model that balances performance with predictability:
 
-- **No cache by default**: File reads go directly to disk for simplicity and predictability
-- **NoopFileCache**: Explicit null-object pattern for when a do-nothing cache is needed
-- **MemoryFileCache**: Opt-in performance optimization for scenarios with repeated file reads
+### Default Behavior
+- **No cache by default**: Simple operations read directly from disk
+- **Automatic caching for recursion**: When `maxDepth > 1` and no cache is provided, a `MemoryFileCache` is automatically enabled to optimize recursive transclusions
+- **Respects user preferences**: Explicitly provided caches are never overridden
 
+### Cache Implementations
+
+#### NoopFileCache
+Explicit null-object pattern for when caching must be disabled:
 ```typescript
-// No cache (default)
-const stream = createTransclusionStream({ basePath: './docs' });
-
-// Explicit no-op cache
 const stream = createTransclusionStream({ 
   basePath: './docs',
-  cache: new NoopFileCache()
-});
-
-// Memory cache for performance-critical scenarios
-const stream = createTransclusionStream({
-  basePath: './docs', 
-  cache: new MemoryFileCache()
+  cache: new NoopFileCache()  // Explicitly disable caching
 });
 ```
 
-Caching only makes sense when:
-- Processing the same files multiple times in a single run
-- Working with deeply nested transclusions with shared components
-- Operating in environments with slow disk I/O
+#### MemoryFileCache
+In-memory cache with size limits to prevent memory issues:
+```typescript
+// Default: 1MB max per file
+const cache = new MemoryFileCache();
+
+// Custom size limit: 500KB per file
+const cache = new MemoryFileCache(500 * 1024);
+
+// Manual usage
+const stream = createTransclusionStream({
+  basePath: './docs', 
+  cache: cache
+});
+```
+
+**MemoryFileCache Features:**
+- **Size-limited entries**: Files exceeding `maxEntrySize` (default 1MB) are not cached
+- **UTF-8 aware**: Correctly calculates byte sizes for multi-byte characters
+- **Statistics tracking**: Hit/miss rates and total cache size available
+
+### Automatic Cache Enabling
+The stream automatically creates a `MemoryFileCache` when:
+1. No cache is explicitly provided
+2. `validateOnly` is false
+3. `maxDepth` is undefined (defaults to 10) or greater than 1
+
+```typescript
+// These will auto-enable caching:
+createTransclusionStream({ maxDepth: 5 });     // Recursive processing
+createTransclusionStream({});                   // Default maxDepth=10
+
+// These will NOT auto-enable caching:
+createTransclusionStream({ maxDepth: 1 });      // No recursion
+createTransclusionStream({ validateOnly: true }); // Validation mode
+createTransclusionStream({ cache: myCache });    // User-provided cache
+```
+
+### When Caching Makes Sense
+- Processing files with deep transclusion hierarchies
+- Multiple references to the same files
+- Working with shared component libraries
+- CI/CD environments with consistent file systems
 
 ## Dependencies
 
 **Runtime**: Zero external dependencies, uses only Node.js built-in modules (`stream`, `fs`, `path`)  
 **Development**: TypeScript, Jest, ESLint  
-**Target**: Node.js 16+ (for modern stream APIs and async/await support)
+**Target**: Node.js 18.18.0+ (for modern stream APIs and async/await support)
 
 ## File Structure
 
