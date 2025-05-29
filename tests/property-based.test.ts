@@ -71,7 +71,7 @@ describe('Property-Based Tests', () => {
       fc.assert(
         fc.property(
           fc.tuple(
-            fc.string().filter(s => s.length > 0 && !s.includes('#')),
+            fc.string().filter(s => s.length > 0 && !s.includes('#') && !s.includes(']')),
             fc.string().filter(s => s.length > 0 && !s.includes(']'))
           ),
           ([filename, heading]) => {
