@@ -263,6 +263,9 @@ describe('cliCore', () => {
       const errorHandler = mockTransform.on.mock.calls.find(call => call[0] === 'error')[1];
       errorHandler(error);
       
+      // Wait for graceful exit to complete
+      await new Promise(resolve => setTimeout(resolve, 20));
+      
       expect(stderrData.join('')).toContain('Transclusion error');
       expect(mockExit).toHaveBeenCalledWith(1);
     });

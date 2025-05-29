@@ -15,6 +15,18 @@ export interface CliOptions {
 }
 
 /**
+ * Gracefully exit after flushing streams
+ */
+async function gracefulExit(code: number, exit: (code: number) => void): Promise<void> {
+  // Set exit code for process
+  process.exitCode = code;
+  // Give streams time to flush
+  await new Promise(resolve => setTimeout(resolve, 10));
+  // Then call the exit function
+  exit(code);
+}
+
+/**
  * Core CLI logic extracted for testability
  */
 export async function runCli(options: CliOptions): Promise<void> {
@@ -26,7 +38,7 @@ export async function runCli(options: CliOptions): Promise<void> {
   if (!argsResult.ok) {
     const logger = new StreamLogger(stderr, stdout);
     logger.error(`${argsResult.error.message}`);
-    exit(1);
+    await gracefulExit(1, exit);
     return;
   }
   
@@ -35,13 +47,13 @@ export async function runCli(options: CliOptions): Promise<void> {
   // Handle help and version flags
   if (args.help) {
     stdout.write(getHelpText() + '\n');
-    exit(0);
+    await gracefulExit(0, exit);
     return;
   }
   
   if (args.version) {
     stdout.write(getVersionText() + '\n');
-    exit(0);
+    await gracefulExit(0, exit);
     return;
   }
   
@@ -80,7 +92,7 @@ export async function runCli(options: CliOptions): Promise<void> {
     transform.on('error', (error) => {
       logger.error('Transclusion error', error);
       if (transclusionOptions.strict) {
-        exit(1);
+        gracefulExit(1, exit).catch(console.error);
       }
     });
     
@@ -96,7 +108,7 @@ export async function runCli(options: CliOptions): Promise<void> {
       
       if (transclusionOptions.strict) {
         logger.error(`Processing failed with ${errors.length} error(s)`);
-        exit(1);
+        await gracefulExit(1, exit);
         return;
       }
     }
@@ -112,6 +124,6 @@ export async function runCli(options: CliOptions): Promise<void> {
     
   } catch (error) {
     logger.error('Fatal error', error);
-    exit(1);
+    await gracefulExit(1, exit);
   }
 }
