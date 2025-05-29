@@ -34,15 +34,15 @@
     "stream",
     "transform"
   ],
-  "author": "Anthropic",
+  "author": "flyingrobots",
   "repository": {
     "type": "git",
-    "url": "https://github.com/anthropics/markdown-transclusion.git"
+    "url": "git+https://github.com/flyingrobots/markdown-transclusion.git"
   },
   "bugs": {
-    "url": "https://github.com/anthropics/markdown-transclusion/issues"
+    "url": "https://github.com/flyingrobots/markdown-transclusion/issues"
   },
-  "homepage": "https://github.com/anthropics/markdown-transclusion#readme",
+  "homepage": "https://github.com/flyingrobots/markdown-transclusion#",
   "engines": {
     "node": ">=18.18.0"
   },
