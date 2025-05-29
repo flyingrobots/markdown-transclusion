@@ -359,34 +359,67 @@ export function getHelpText(): string {
 USAGE:
   markdown-transclusion [OPTIONS] [FILE]
   cat FILE | markdown-transclusion [OPTIONS]
+  command | markdown-transclusion [OPTIONS]
+
+DESCRIPTION:
+  Processes Obsidian-style ![[filename]] transclusion syntax in Markdown files.
+  Supports recursive inclusion, heading extraction, and variable substitution.
 
 OPTIONS:
   -h, --help              Show this help message
   -v, --version           Show version information
   -o, --output FILE       Write output to FILE instead of stdout
-  -b, --base-path PATH    Base path for resolving references (default: current directory)
-  --extensions EXTS       Comma-separated list of file extensions to try (default: md,markdown)
-  --max-depth N           Maximum transclusion depth (default: 10)
-  --variables VARS        Variables for substitution (format: key=value,key2=value2)
-  -s, --strict            Exit with error on any transclusion failure
-  --validate-only         Check references without processing content
-  --log-level LEVEL       Set log level: ERROR, WARN, INFO, DEBUG (default: INFO)
+  -b, --base-path PATH    Base directory for resolving relative references
+                          (default: current working directory)
+  --extensions EXTS       Comma-separated list of file extensions to try
+                          when extension is omitted (default: md,markdown)
+  --max-depth N           Maximum recursion depth for nested transclusions
+                          (default: 10, prevents infinite loops)
+  --variables VARS        Variables for {{var}} substitution in filenames
+                          Format: key1=value1,key2=value2
+  -s, --strict            Exit with error code 1 on any transclusion failure
+                          (default: insert error comment and continue)
+  --validate-only         Check all references without outputting content
+                          Useful for CI/CD validation workflows
+  --log-level LEVEL       Set logging verbosity: ERROR, WARN, INFO, DEBUG
+                          (default: INFO, logs go to stderr)
+
+TRANSCLUSION SYNTAX:
+  ![[filename]]           Include entire file
+  ![[filename#heading]]   Include specific heading section
+  ![[dir/file]]          Include file from subdirectory
+  ![[file-{{var}}]]      Include file with variable substitution
 
 EXAMPLES:
-  # Process a file
+  # Process a single file
   markdown-transclusion document.md
 
-  # Process with variables
-  markdown-transclusion document.md --variables lang=es,version=2
+  # Write to output file
+  markdown-transclusion input.md --output processed.md
+
+  # Process with variables for multilingual docs
+  markdown-transclusion template.md --variables lang=es,version=2.0
+
+  # Validate all references in documentation
+  markdown-transclusion docs/index.md --validate-only --strict
+
+  # Process files in different directory
+  markdown-transclusion README.md --base-path ./docs
 
   # Pipe to other tools
-  markdown-transclusion document.md | pandoc -o output.pdf
+  markdown-transclusion doc.md | pandoc -o output.pdf
 
-  # Validate references only
-  markdown-transclusion document.md --validate-only
+  # Process from stdin
+  cat template.md | markdown-transclusion --variables env=prod
 
-  # Use in a pipeline
-  cat template.md | markdown-transclusion --variables lang=fr > output.md`;
+  # Silent mode (only errors)
+  markdown-transclusion doc.md --log-level ERROR
+
+EXIT CODES:
+  0  Success
+  1  Error (file not found, transclusion errors with --strict, etc.)
+
+For more information, see: https://github.com/anthropics/markdown-transclusion`;
 }
 
 /**

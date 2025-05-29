@@ -24,9 +24,19 @@ Thank you for your interest in contributing to markdown-transclusion! This guide
    npm install
    ```
 
-4. Run tests to verify setup:
+4. Build the project:
+   ```bash
+   npm run build
+   ```
+
+5. Run tests to verify setup:
    ```bash
    npm test
+   ```
+
+6. Try the CLI:
+   ```bash
+   echo '![[test]]' | node dist/cli.js
    ```
 
 ## Project Structure
@@ -68,10 +78,16 @@ npm test
 npm test -- parser.test.ts
 
 # Run tests in watch mode
-npm test -- --watch
+npm run test:watch
 
 # Run with coverage
-npm test -- --coverage
+npm run test:coverage
+
+# Run only unit tests
+npm test -- --testPathIgnorePatterns=integration
+
+# Run property-based tests
+npm test -- property-based.test.ts
 ```
 
 ### Building
@@ -84,7 +100,7 @@ npm run build
 npm run build:watch
 ```
 
-### Linting
+### Code Quality Checks
 
 ```bash
 # Run ESLint
@@ -92,9 +108,22 @@ npm run lint
 
 # Fix auto-fixable issues
 npm run lint:fix
+
+# Type checking without building
+npm run type-check
+
+# Run all checks (recommended before committing)
+npm run lint && npm run type-check && npm test
 ```
 
 ## Testing Strategy
+
+### Test Coverage Requirements
+
+- Minimum 80% code coverage
+- 100% coverage for security-critical paths
+- All public APIs must have tests
+- Edge cases must be tested
 
 ### Unit Tests
 
@@ -123,6 +152,22 @@ describe('ModuleName', () => {
 });
 ```
 
+### Property-Based Testing
+
+Use fast-check for testing with random inputs:
+```typescript
+import * as fc from 'fast-check';
+
+it('should handle any valid filename', () => {
+  fc.assert(
+    fc.property(fc.string(), (filename) => {
+      const result = parseTransclusionReference(`![[${filename}]]`);
+      expect(result?.path).toBe(filename);
+    })
+  );
+});
+```
+
 ### Integration Tests
 
 Integration tests verify end-to-end functionality:
@@ -136,15 +181,33 @@ Integration tests verify end-to-end functionality:
 Use the provided mock utilities for isolated testing:
 
 ```typescript
-import { setupTestEnv } from './tests/utils/testEnvironment';
-import { MockFileSystem, MockLogger } from './tests/mocks';
+import { TestEnvironmentBuilder } from '../tests/mocks';
+import { MockFileSystem, MockLogger } from '../tests/mocks';
 
-const env = setupTestEnv()
+const builder = new TestEnvironmentBuilder()
   .withFiles({
-    '/test/main.md': '# Main\n![[section]]',
-    '/test/section.md': '## Content'
+    'main.md': '# Main\n![[section]]',
+    'section.md': '## Content'
   })
+  .withBasePath('/test')
   .build();
+
+// Access mocks
+const { fileSystem, logger, cache } = builder.getMocks();
+```
+
+### Custom Jest Matchers
+
+The project includes custom matchers for transclusion testing:
+```typescript
+// Check if content was transcluded
+expect(result).toHaveTranscluded('section.md');
+
+// Check for specific errors
+expect(result).toHaveTransclusionError('FILE_NOT_FOUND');
+
+// Check circular references
+expect(result).toHaveCircularReference(['a.md', 'b.md', 'a.md']);
 ```
 
 ## Code Style
@@ -155,6 +218,23 @@ const env = setupTestEnv()
 - Prefer interfaces over type aliases for object shapes
 - Use enums for error codes and constants
 - Document public APIs with JSDoc comments
+- Avoid `any` type - use `unknown` and type guards instead
+- Use strict null checks
+
+```typescript
+/**
+ * Processes a single line for transclusion references
+ * @param line - The line to process
+ * @param options - Processing options
+ * @returns Promise resolving to processed line and errors
+ */
+export async function processLine(
+  line: string,
+  options: TransclusionOptions
+): Promise<TransclusionLineResult> {
+  // Implementation
+}
+```
 
 ### Naming Conventions
 
@@ -182,6 +262,48 @@ if (!file.exists) {
   };
 }
 ```
+
+## Adding New Features
+
+### Where to Add New Transclusion Features
+
+1. **New syntax parsing**: Update `src/parser.ts`
+   ```typescript
+   // Add new pattern to parseTransclusionReference
+   // e.g., ![[file|alias]] for Obsidian aliases
+   ```
+
+2. **New resolution strategies**: Update `src/resolver.ts`
+   ```typescript
+   // Add new resolution logic
+   // e.g., support for URLs or remote files
+   ```
+
+3. **New processing features**: Update `src/utils/LineTranscluder.ts`
+   ```typescript
+   // Add new processing logic
+   // e.g., syntax highlighting for included code
+   ```
+
+4. **New CLI options**: Update `src/utils/cliArgs.ts` and `src/cli.ts`
+   ```typescript
+   // Add new command-line flags
+   // Update help text
+   ```
+
+### Feature Checklist
+
+When adding a new feature:
+- [ ] Update the parser if new syntax
+- [ ] Add unit tests
+- [ ] Add integration tests
+- [ ] Update TypeScript types
+- [ ] Update API documentation
+- [ ] Update CLI help text
+- [ ] Add examples to README
+- [ ] Consider security implications
+- [ ] Test performance impact
+- [ ] Update CHANGELOG
 
 ## Submitting Changes
 
@@ -263,11 +385,97 @@ When contributing, keep security in mind:
 - Cache strategically, not by default
 - Profile before optimizing
 - Consider memory usage for deep recursion
+- Use async/await properly - don't block the event loop
+- Batch file operations when possible
+
+### Performance Testing
+
+```typescript
+// Time-sensitive tests
+it('should process large files efficiently', async () => {
+  const start = Date.now();
+  await processLargeFile();
+  const duration = Date.now() - start;
+  
+  expect(duration).toBeLessThan(1000); // 1 second max
+});
+```
+
+## CI/CD Pipeline
+
+The project uses GitHub Actions for continuous integration:
+
+1. **On Pull Request**:
+   - Run all tests
+   - Check code coverage
+   - Run linting
+   - Type checking
+   - Build verification
+
+2. **On Merge to Main**:
+   - All PR checks
+   - Publish to npm (if version changed)
+   - Update documentation
+
+### Local CI Simulation
+
+```bash
+# Run the same checks as CI
+npm run lint && npm run type-check && npm test && npm run build
+```
+
+## Common Development Tasks
+
+### Adding a New Error Type
+
+1. Add to error codes in `src/types.ts`:
+   ```typescript
+   export enum ErrorCode {
+     // ...
+     NEW_ERROR = 'NEW_ERROR'
+   }
+   ```
+
+2. Use in appropriate location:
+   ```typescript
+   const error: TransclusionError = {
+     message: 'Descriptive error message',
+     path: filePath,
+     code: ErrorCode.NEW_ERROR
+   };
+   ```
+
+3. Update error handling in CLI
+4. Add tests for the error case
+5. Document in API docs
+
+### Debugging Tips
+
+```bash
+# Run with debug output
+DEBUG=* npm test
+
+# Run single test with verbose output
+npm test -- --verbose parser.test.ts
+
+# Use Node debugger
+node --inspect-brk dist/cli.js input.md
+```
+
+## Release Process
+
+1. Update version in `package.json`
+2. Update CHANGELOG.md
+3. Run `npm run prepublishOnly`
+4. Create release PR
+5. After merge, tag release
+6. npm publish is automated via CI
 
 ## Questions?
 
 - Open an issue for bugs or feature requests
-- Start a discussion for questions
+- Start a discussion for questions  
 - Check existing issues before creating new ones
+- Join our Discord for real-time help (if available)
 
 Thank you for contributing!
