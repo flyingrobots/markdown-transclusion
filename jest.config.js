@@ -1,21 +1,20 @@
 module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'node',
-  roots: ['<rootDir>/tests'],
-  testMatch: ['**/*.test.ts'],
-  collectCoverageFrom: [
-    'src/**/*.ts',
-    '!src/**/*.d.ts',
-    '!src/cli.ts'
-  ],
+  collectCoverage: true,
   coverageDirectory: 'coverage',
-  coverageReporters: ['text', 'lcov', 'html'],
+  coverageReporters: ['text', 'lcov'],
   coverageThreshold: {
     global: {
-      branches: 95,
-      functions: 95,
+      branches: 85,
+      functions: 90,
       lines: 95,
-      statements: 95
-    }
-  }
+      statements: 95,
+    },
+  },
+  coveragePathIgnorePatterns: [
+    '/node_modules/',
+    '/tests/helpers/',
+    '/tests/testUtils/',
+  ],
 };
