@@ -26,6 +26,8 @@ const result = await processLine('Before ![[section]] after', {
 
 console.log(result.output);  // "Before <content of section.md> after"
 console.log(result.errors);  // Array of any errors encountered
+
+// 🛠️ .errors is a custom property on TransclusionTransform. You won't find it in a regular Node stream. Capisce?
 ```
 
 **Returns:**
@@ -61,7 +63,7 @@ const stream = createTransclusionStream({
 
 ```typescript
 interface TransclusionOptions {
-  basePath: string;              // Base directory for resolving references
+  basePath?: string;             // Base directory for resolving references (default: process.cwd())
   extensions?: string[];         // File extensions to try (default: ['md', 'markdown'])
   variables?: Record<string, string>; // Variables for substitution
   strict?: boolean;              // Exit with error on transclusion failure (default: false)
@@ -437,6 +439,8 @@ markdown-transclusion input.md --log-level WARN
 
 # Piping
 cat input.md | markdown-transclusion > output.md
+
+# ⚠️ On Windows, use Git Bash or PowerShell. CMD can't handle the pipework.
 
 # Multiple files (using shell)
 for file in docs/*.md; do

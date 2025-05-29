@@ -198,25 +198,25 @@ Command-line interface follows Unix pipeline conventions for easy integration in
 ```bash
 # Universal Charter workflow - stream processing
 cat charter-template.md | npx markdown-transclusion \
-  --variables lang=es > charter-es.md
+  --variables "lang=es" > charter-es.md
 
 # File input with stream output
 npx markdown-transclusion charter-template.md \
-  --variables lang=es > charter-es.md
+  --variables "lang=es" > charter-es.md
 
 # Validation mode (checks references without processing content)
 npx markdown-transclusion charter-template.md \
   --validate \
-  --variables lang=en,es,fr,de,it
+  --variables "lang=en,es,fr,de,it"
 
 # Strict mode with explicit output
 npx markdown-transclusion charter-template.md \
-  --variables lang=es \
+  --variables "lang=es" \
   --strict \
   --output charter-es.md
 
 # Pipeline with other tools
-npx markdown-transclusion charter-template.md --variables lang=es | \
+npx markdown-transclusion charter-template.md --variables "lang=es" | \
   pandoc --from markdown --to pdf > charter-es.pdf
 ```
 

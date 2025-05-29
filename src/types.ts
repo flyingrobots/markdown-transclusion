@@ -1,7 +1,7 @@
 import type { Transform } from 'stream';
 
 export interface TransclusionOptions {
-  basePath: string;
+  basePath?: string; // Defaults to process.cwd()
   extensions?: string[];
   variables?: Record<string, string>;
   strict?: boolean;

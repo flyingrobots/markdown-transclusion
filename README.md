@@ -50,7 +50,7 @@ markdown-transclusion input.md
 markdown-transclusion input.md --output output.md
 
 # Process with variables
-markdown-transclusion template.md --variables lang=es,version=2.0
+markdown-transclusion template.md --variables "lang=es,version=2.0"
 
 # Validate references without processing
 markdown-transclusion docs/index.md --validate-only --strict
@@ -60,6 +60,8 @@ markdown-transclusion README.md --base-path ./docs
 
 # Pipe to other tools
 markdown-transclusion input.md | pandoc -o output.pdf
+
+# ⚠️ On Windows, use Git Bash or PowerShell. CMD can't handle the pipework.
 ```
 
 ### Example
@@ -96,6 +98,7 @@ Running `markdown-transclusion main.md` produces:
 Welcome to our project! This tool helps you create modular documentation.
 ## Overview
 Our tool supports transclusion, making documentation maintenance easier.
+![[api/endpoints]]
 <!-- Error: File not found: api/endpoints -->
 ```
 
@@ -140,6 +143,7 @@ if (stream.errors.length > 0) {
 | `![[filename]]` | Include entire file | Contents of `filename.md` |
 | `![[folder/file]]` | Include file from folder | Contents of `folder/file.md` |
 | `![[file#heading]]` | Include specific section | Content under `# heading` until next heading |
+| `![[file#What We Don't Talk About]]` | Include section with spaces | Content under heading with spaces |
 | `![[file-{{var}}]]` | Variable substitution | With `var=en`: contents of `file-en.md` |
 
 ### Advanced Examples
@@ -155,10 +159,12 @@ if (stream.errors.length > 0) {
 ![[architecture#System Overview]]
 
 <!-- Error handling - missing file -->
-![[missing-file]]  <!-- Output: <!-- Error: File not found: missing-file --> -->
+![[missing-file]]
+<!-- Error: File not found: missing-file -->
 
 <!-- Circular reference protection -->
 <!-- If A includes B, and B includes A, it will show: -->
+![[/path/to/A.md]]
 <!-- Error: Circular reference detected: /path/to/A.md → /path/to/B.md → /path/to/A.md -->
 ```
 
@@ -173,10 +179,10 @@ git clone https://github.com/flyingrobots/markdown-transclusion.git
 cd markdown-transclusion/examples/basic
 
 # Run the example
-npx markdown-transclusion main.md --variables lang=en
+npx markdown-transclusion main.md --variables "lang=en"
 
 # Try different languages
-npx markdown-transclusion main.md --variables lang=es
+npx markdown-transclusion main.md --variables "lang=es"
 ```
 
 See [examples/basic/README.md](./examples/basic/README.md) for a full walkthrough.
@@ -192,7 +198,7 @@ Maintain documentation in multiple languages without duplication:
 # template.md contains: ![[content-{{lang}}]]
 for lang in en es fr de zh; do
   markdown-transclusion template.md \
-    --variables lang=$lang \
+    --variables "lang=$lang" \
     --output docs/$lang/guide.md
 done
 ```
@@ -255,7 +261,7 @@ jobs:
         run: |
           npm install -g markdown-transclusion
           markdown-transclusion docs/index.md \
-            --variables version=${{ github.ref_name }} \
+            --variables "version=${{ github.ref_name }}" \
             --strict \
             --output dist/documentation.md
             

@@ -32,20 +32,20 @@ npx markdown-transclusion main.md
 ### With English Features
 
 ```bash
-npx markdown-transclusion main.md --variables lang=en
+npx markdown-transclusion main.md --variables "lang=en"
 ```
 
 ### With Spanish Features
 
 ```bash
-npx markdown-transclusion main.md --variables lang=es
+npx markdown-transclusion main.md --variables "lang=es"
 ```
 
 ### Output to File
 
 ```bash
-npx markdown-transclusion main.md --variables lang=en --output output-en.md
-npx markdown-transclusion main.md --variables lang=es --output output-es.md
+npx markdown-transclusion main.md --variables "lang=en" --output output-en.md
+npx markdown-transclusion main.md --variables "lang=es" --output output-es.md
 ```
 
 ### Validate Only
