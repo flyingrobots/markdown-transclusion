@@ -31,6 +31,9 @@ module.exports = [
       // Allow console.warn and console.error
       'no-console': ['warn', { allow: ['warn', 'error'] }],
       
+      // Warn on TODO, FIXME, HACK comments
+      'no-warning-comments': ['warn', { 'terms': ['todo', 'fixme', 'hack'], 'location': 'anywhere' }],
+      
       // Turn off rules that don't work well with TypeScript
       'no-undef': 'off'
     }
