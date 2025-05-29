@@ -316,11 +316,11 @@ describe('Logger', () => {
     });
     
     it('should handle partial stream configuration', () => {
+      const stderrSpy = jest.spyOn(process.stderr, 'write').mockImplementation(() => true);
+      const stdoutSpy = jest.spyOn(process.stdout, 'write').mockImplementation(() => true);
+      
       const logger1 = new StreamLogger(undefined, outStream as any);
       const logger2 = new StreamLogger(errorStream as any, undefined);
-      
-      const stderrSpy = jest.spyOn(process.stderr, 'write').mockImplementation();
-      const stdoutSpy = jest.spyOn(process.stdout, 'write').mockImplementation();
       
       // Logger1: undefined error stream should use process.stderr
       logger1.error('Error to default');
