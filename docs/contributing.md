@@ -6,7 +6,7 @@ Thank you for your interest in contributing to markdown-transclusion! This guide
 
 ### Prerequisites
 
-- Node.js 16+ (for modern stream APIs)
+- Node.js 18.18.0+ (required for modern stream APIs)
 - npm or yarn
 - Git
 
@@ -15,7 +15,7 @@ Thank you for your interest in contributing to markdown-transclusion! This guide
 1. Fork the repository
 2. Clone your fork:
    ```bash
-   git clone https://github.com/YOUR_USERNAME/markdown-transclusion.git
+   git clone https://github.com/flyingrobots/markdown-transclusion.git
    cd markdown-transclusion
    ```
 
@@ -36,7 +36,7 @@ Thank you for your interest in contributing to markdown-transclusion! This guide
 
 6. Try the CLI:
    ```bash
-   echo '![[test]]' | node dist/cli.js
+   echo '![[test]]' | npx markdown-transclusion
    ```
 
 ## Project Structure
@@ -67,6 +67,47 @@ markdown-transclusion/
 ```
 
 ## Development Workflow
+
+```mermaid
+flowchart TD
+    A["Fork & Clone"] --> B["Install Dependencies"]
+    B --> C["Create Feature Branch"]
+    C --> D["Make Changes"]
+    D --> E["Run Tests"]
+    E --> F{"Tests Pass?"}
+    
+    F -->|"No"| D
+    F -->|"Yes"| G["Run Linter"]
+    
+    G --> H{"Lint Clean?"}
+    H -->|"No"| I["Fix Issues"]
+    H -->|"Yes"| J["Update Docs"]
+    
+    I --> G
+    J --> K["Commit Changes"]
+    K --> L["Push to Fork"]
+    L --> M["Create PR"]
+    
+    style F fill:#fff9c4
+    style H fill:#fff9c4
+    style M fill:#c8e6c9
+```
+
+### Developer Onboarding Flow
+
+```mermaid
+graph LR
+    A["Fork Repo"] --> B["Clone Locally"]
+    B --> C["Install Deps"]
+    C --> D["Run Tests + Lint"]
+    D --> E["Open Pull Request"]
+    
+    style A fill:#e3f2fd
+    style B fill:#e1f5fe
+    style C fill:#fff9c4
+    style D fill:#ffecb3
+    style E fill:#c8e6c9
+```
 
 ### Running Tests
 
@@ -120,7 +161,9 @@ npm run lint && npm run type-check && npm test
 
 ### Test Coverage Requirements
 
-- Minimum 80% code coverage
+- Minimum 95% statement and line coverage
+- Minimum 90% function coverage
+- Minimum 85% branch coverage
 - 100% coverage for security-critical paths
 - All public APIs must have tests
 - Edge cases must be tested
@@ -181,33 +224,17 @@ Integration tests verify end-to-end functionality:
 Use the provided mock utilities for isolated testing:
 
 ```typescript
-import { TestEnvironmentBuilder } from '../tests/mocks';
-import { MockFileSystem, MockLogger } from '../tests/mocks';
+import { MockFileCache, MockLogger } from '../tests/mocks';
 
-const builder = new TestEnvironmentBuilder()
-  .withFiles({
-    'main.md': '# Main\n![[section]]',
-    'section.md': '## Content'
-  })
-  .withBasePath('/test')
-  .build();
+// Use the mock file cache
+const cache = new MockFileCache();
+cache.set('/test/file.md', 'mock content');
 
-// Access mocks
-const { fileSystem, logger, cache } = builder.getMocks();
-```
+// Use the mock logger
+const logger = new MockLogger();
 
-### Custom Jest Matchers
-
-The project includes custom matchers for transclusion testing:
-```typescript
-// Check if content was transcluded
-expect(result).toHaveTranscluded('section.md');
-
-// Check for specific errors
-expect(result).toHaveTransclusionError('FILE_NOT_FOUND');
-
-// Check circular references
-expect(result).toHaveCircularReference(['a.md', 'b.md', 'a.md']);
+// Access mock statistics
+console.log(cache.stats()); // { size: 1, hits: 0, misses: 0 }
 ```
 
 ## Code Style
@@ -238,7 +265,7 @@ export async function processLine(
 
 ### Naming Conventions
 
-- **Files**: camelCase (e.g., `lineTranscluder.ts`)
+- **Files**: lowercase or camelCase for utilities (e.g., `parser.ts`, `lineTranscluder.ts`)
 - **Classes**: PascalCase (e.g., `TransclusionTransform`)
 - **Functions**: camelCase (e.g., `processLine`)
 - **Constants**: UPPER_SNAKE_CASE (e.g., `MAX_DEPTH`)
@@ -331,6 +358,36 @@ Types:
 - `chore`: Build/tooling changes
 
 ### Pull Request Process
+
+```mermaid
+sequenceDiagram
+    participant Dev as Developer
+    participant Fork as Your Fork
+    participant CI as GitHub Actions
+    participant Main as Main Repo
+    participant Rev as Reviewer
+    
+    Dev->>Fork: Push feature branch
+    Dev->>Main: Create PR
+    Main->>CI: Trigger checks
+    
+    CI->>CI: Run tests
+    CI->>CI: Check coverage (95/90/85%)
+    CI->>CI: Run linter
+    CI->>CI: Type check
+    CI->>CI: Build project
+    
+    alt All checks pass
+        CI->>Main: ✅ Status
+        Main->>Rev: Request review
+        Rev->>Main: Review & approve
+        Rev->>Main: Merge PR
+    else Checks fail
+        CI->>Main: ❌ Status
+        Main->>Dev: Fix required
+        Dev->>Fork: Push fixes
+    end
+```
 
 1. Create a feature branch:
    ```bash

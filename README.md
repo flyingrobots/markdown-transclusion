@@ -8,14 +8,68 @@ Stream-based library and CLI for resolving Obsidian-style transclusion reference
 
 ## Overview
 
-`markdown-transclusion` processes Markdown files containing transclusion syntax (`![[filename]]`) and resolves these references by embedding the content of referenced files. This enables modular documentation workflows where content can be composed from reusable components.
+`markdown-transclusion` processes Markdown files containing transclusion syntax (`![[filename]]`) and resolves these references by including the content of referenced files. This enables modular documentation workflows where content can be composed from reusable components.
+
+### High-Level System Flow
+
+```mermaid
+graph TD
+    A["CLI Input or API Call"] --> B["Transclusion Processor"]
+    B --> C["Flattened Output"]
+    B --> D[".errors[] / processedFiles[]"]
+    
+    style B fill:#fff3e0
+    style C fill:#c8e6c9
+    style D fill:#e3f2fd
+```
+
+### Detailed Processing Example
+
+```mermaid
+graph LR
+    A["📄 main.md<br/>![[header]]<br/>![[content]]"] --> B["markdown-transclusion"]
+    C["📄 header.md"] --> B
+    D["📄 content.md"] --> B
+    B --> E["📄 output.md<br/>(fully resolved)"]
+    
+    style A fill:#f9f,stroke:#333,stroke-width:2px
+    style E fill:#9f9,stroke:#333,stroke-width:2px
+```
+
+### Stream-Based API Flow
+
+```mermaid
+graph LR
+    subgraph "Input"
+        I1["File Stream"] --> T["TransclusionTransform"]
+        I2["String Input"] --> T
+        I3["Process stdin"] --> T
+    end
+    
+    subgraph "Processing"
+        T --> P["Line-by-line processing"]
+        P --> R["Resolve transclusions"]
+        R --> P
+    end
+    
+    subgraph "Output"
+        R --> O1["Output Stream"]
+        R --> O2["stream.errors[]"]
+        R --> O3["result.processedFiles[]"]
+    end
+    
+    style T fill:#e1f5fe
+    style O1 fill:#c8e6c9
+    style O2 fill:#ffccbc
+    style O3 fill:#e3f2fd
+```
 
 Designed for the Universal Charter project's multilingual documentation pipeline, it provides reliable, stream-based processing suitable for CI/CD integration.
 
 ## Features
 
 ✅ **Recursive transclusion** - Include files within files with automatic depth limiting  
-✅ **Circular reference detection** - Prevents infinite loops with clear error reporting  
+✅ **Circular reference detection** - Prevents infinite loops with clear error reporting
 ✅ **Heading extraction** - Include specific sections using `![[file#heading]]` syntax  
 ✅ **Variable substitution** - Dynamic file references with `{{variable}}` placeholders  
 ✅ **Stream processing** - Memory-efficient processing of large documents  
@@ -194,6 +248,24 @@ See [examples/basic/README.md](./examples/basic/README.md) for a full walkthroug
 
 Maintain documentation in multiple languages without duplication:
 
+```mermaid
+flowchart LR
+    A["template.md<br/>![[content-{{lang}}]]"] --> B{"Variable<br/>Substitution"}
+    B -->|"lang=en"| C["![[content-en]]"]
+    B -->|"lang=es"| D["![[content-es]]"]
+    B -->|"lang=fr"| E["![[content-fr]]"]
+    
+    C --> F["content-en.md"]
+    D --> G["content-es.md"]
+    E --> H["content-fr.md"]
+    
+    style A fill:#e1f5fe
+    style B fill:#fff9c4
+    style F fill:#c8e6c9
+    style G fill:#c8e6c9
+    style H fill:#c8e6c9
+```
+
 ```bash
 # template.md contains: ![[content-{{lang}}]]
 for lang in en es fr de zh; do
@@ -325,6 +397,16 @@ const stream = createTransclusionStream({
   variables: { env: 'prod' },
   maxDepth: 5
 });
+
+// Access accumulated errors after processing
+stream.on('finish', () => {
+  if (stream.errors.length > 0) {
+    console.error(`Found ${stream.errors.length} errors:`);
+    stream.errors.forEach(err => {
+      console.error(`- [${err.path}] ${err.message}`);
+    });
+  }
+});
 ```
 
 ### Options
@@ -341,11 +423,19 @@ const stream = createTransclusionStream({
 
 ### Error Codes
 
+String error codes used in transclusion processing:
 - `FILE_NOT_FOUND` - Referenced file doesn't exist
 - `CIRCULAR_REFERENCE` - Circular inclusion detected  
 - `MAX_DEPTH_EXCEEDED` - Too many nested includes
 - `READ_ERROR` - File read failure
-- `SECURITY_ERROR` - Path security violation
+- `HEADING_NOT_FOUND` - Specified heading not found in file
+
+Numeric error codes used for security violations:
+- `1001` - NULL_BYTE - Null byte in path
+- `1002` - PATH_TRAVERSAL - Path traversal attempt (..)
+- `1003` - ABSOLUTE_PATH - Absolute path not allowed
+- `1004` - UNC_PATH - UNC path not allowed
+- `1005` - OUTSIDE_BASE - Path outside base directory
 
 See [docs/api.md](./docs/api.md) for complete API documentation.
 
@@ -408,6 +498,8 @@ Benchmarks on a MacBook Pro M1:
 - 1MB file with 50 transclusions: ~15ms
 - 10MB file with 500 transclusions: ~120ms
 - Memory usage: ~5MB constant
+
+*Note: Performance measurements taken using Node.js 18.18.0 with warm file system cache. Actual performance may vary based on disk speed, file system, and transclusion depth.*
 
 ## Comparison with Alternatives
 

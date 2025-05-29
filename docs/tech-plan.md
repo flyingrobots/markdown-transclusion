@@ -24,7 +24,7 @@ Modern documentation workflows increasingly rely on modular, composable content 
 - No standardized way to compose documents from modular components  
 - Translation workflows require maintaining separate copies of shared content
 - Version control becomes complex with duplicated content across files
-- Obsidian's `![[embed]]` syntax is proprietary and not portable
+- Obsidian's `![[transclusion]]` syntax is proprietary and not portable
 
 ## Solution
 
@@ -32,7 +32,7 @@ A focused, single-purpose library that resolves transclusion references in Markd
 
 ```mermaid
 graph LR
-    A["Source.md with ![[embeds]]"] --> B["markdown-transclusion"] 
+    A["Source.md with ![[transclusions]]"] --> B["markdown-transclusion"] 
     B --> C["Flattened.md"]
     
     D["sections/intro.md"] --> B
@@ -51,17 +51,72 @@ flowchart TD
     A["Input Markdown"] --> B{"Contains ![[reference]]?"}
     B -->|"Yes"| C["Extract reference path"]
     B -->|"No"| H["Output line as-is"]
-    C --> D["Resolve file path"]
-    D --> E{"File exists?"}
-    E -->|"Yes"| F["Read file content"]
-    E -->|"No"| G["Output error comment"]
-    F --> I["Recursively process content"]
-    G --> J["Continue processing"]
+    
+    C --> VS["Variable Substitution<br/>{{lang}} → en"]
+    VS --> D["Resolve file path"]
+    D --> SEC["Security Check"]
+    SEC --> E{"File exists?"}
+    
+    E -->|"Yes"| CACHE{"Check Cache"}
+    E -->|"No"| G["Output error comment<br/>Add to errors[]"]
+    
+    CACHE -->|"Hit"| USE["Use cached content"]
+    CACHE -->|"Miss"| F["Read file content"]
+    
+    F --> STORE["Store in cache<br/>(if size < maxEntrySize)"]
+    STORE --> I["Recursively process content"]
+    USE --> I
+    
+    I --> PF["Add to processedFiles[]"]
+    PF --> J["Continue processing"]
+    
+    G --> J
     H --> J
-    I --> J["Next line"]
     J --> K{"More lines?"}
     K -->|"Yes"| B
-    K -->|"No"| L["Return processed content"]
+    K -->|"No"| L["Return processed content<br/>+ errors[] + processedFiles[]"]
+    
+    style VS fill:#fff9c4
+    style SEC fill:#ffcdd2
+    style CACHE fill:#e1f5fe
+    style G fill:#ffccbc
+    style L fill:#c8e6c9
+```
+
+### Multilingual Workflow
+
+```mermaid
+flowchart LR
+    subgraph "Template File"
+        T["main.md<br/>![[intro-{{lang}}]]<br/>![[features-{{lang}}]]"]
+    end
+    
+    subgraph "Variable Substitution"
+        V1["{{lang}} = en"] --> F1["![[intro-en]]<br/>![[features-en]]"]
+        V2["{{lang}} = es"] --> F2["![[intro-es]]<br/>![[features-es]]"]
+        V3["{{lang}} = fr"] --> F3["![[intro-fr]]<br/>![[features-fr]]"]
+    end
+    
+    T --> V1
+    T --> V2
+    T --> V3
+    
+    subgraph "File Resolution"
+        F1 --> R1["intro-en.md<br/>features-en.md"]
+        F2 --> R2["intro-es.md<br/>features-es.md"]
+        F3 --> R3["intro-fr.md<br/>features-fr.md"]
+    end
+    
+    subgraph "Output Files"
+        R1 --> O1["guide-en.md"]
+        R2 --> O2["guide-es.md"]
+        R3 --> O3["guide-fr.md"]
+    end
+    
+    style T fill:#e3f2fd
+    style O1 fill:#c8e6c9
+    style O2 fill:#c8e6c9
+    style O3 fill:#c8e6c9
 ```
 
 ## Transclusion Syntax Support
@@ -136,7 +191,7 @@ flowchart TD
 **So that** I can maintain translations efficiently
 
 ```markdown
-![[intro-${lang}]]  <!-- Resolves to intro-en.md, intro-es.md, etc -->
+![[intro-{{lang}}]]  <!-- Resolves to intro-en.md, intro-es.md, etc -->
 ```
 
 ### F6: Heading-Specific Transclusion
@@ -323,6 +378,33 @@ Built as part of a document transformation pipeline for generating multilingual 
 
 Implements Node.js Transform streams for memory-efficient processing of large documents without loading entire files into memory.
 
+```mermaid
+stateDiagram-v2
+    [*] --> Buffering: Input chunk
+    
+    Buffering --> LineDetection: Complete line found
+    LineDetection --> ParseLine: Check for ![[ref]]
+    
+    ParseLine --> ProcessNormal: No transclusion
+    ParseLine --> ResolvePath: Has transclusion
+    
+    ResolvePath --> CheckSecurity: Path resolved
+    CheckSecurity --> ReadFile: Security OK
+    CheckSecurity --> ErrorComment: Security fail
+    
+    ReadFile --> CheckCircular: Content loaded
+    CheckCircular --> RecursiveProcess: Not circular
+    CheckCircular --> ErrorComment: Circular ref
+    
+    RecursiveProcess --> ComposeOutput: Done
+    ProcessNormal --> ComposeOutput: Done
+    ErrorComment --> ComposeOutput: Done
+    
+    ComposeOutput --> PushOutput: Line ready
+    PushOutput --> Buffering: More input
+    PushOutput --> [*]: Stream end
+```
+
 **Key Implementation Details:**
 - **Transform Stream**: Primary interface using `stream.Transform`
 - **Line Buffering**: Buffers input until complete lines or transclusion references are identified
@@ -414,6 +496,37 @@ createTransclusionStream({ cache: myCache });    // User-provided cache
 **Runtime**: Zero external dependencies, uses only Node.js built-in modules (`stream`, `fs`, `path`)  
 **Development**: TypeScript, Jest, ESLint  
 **Target**: Node.js 18.18.0+ (for modern stream APIs and async/await support)
+
+## Security Model
+
+```mermaid
+flowchart TB
+    A["User Input:<br/>![[../../secret.md]]"] --> B["Path Validation"]
+    
+    B --> C{"Contains<br/>null byte?"}
+    C -->|"Yes"| D["Error 1001:<br/>NULL_BYTE"]
+    C -->|"No"| E{"Contains<br/>../ traversal?"}
+    
+    E -->|"Yes"| F["Error 1002:<br/>PATH_TRAVERSAL"]
+    E -->|"No"| G{"Is absolute<br/>path?"}
+    
+    G -->|"Yes"| H["Error 1003:<br/>ABSOLUTE_PATH"]
+    G -->|"No"| I{"Is UNC<br/>path?"}
+    
+    I -->|"Yes"| J["Error 1004:<br/>UNC_PATH"]
+    I -->|"No"| K["Resolve Path"]
+    
+    K --> L{"Within<br/>basePath?"}
+    L -->|"No"| M["Error 1005:<br/>OUTSIDE_BASE"]
+    L -->|"Yes"| N["✅ Path is safe"]
+    
+    style D fill:#ffcdd2
+    style F fill:#ffcdd2
+    style H fill:#ffcdd2
+    style J fill:#ffcdd2
+    style M fill:#ffcdd2
+    style N fill:#c8e6c9
+```
 
 ## File Structure
 

@@ -4,15 +4,36 @@
 
 The markdown-transclusion system is built on a modular architecture with clear separation of concerns:
 
-```
-┌─────────────┐     ┌──────────────┐     ┌───────────────┐
-│   Parser    │────▶│   Resolver   │────▶│  File Reader  │
-└─────────────┘     └──────────────┘     └───────────────┘
-       │                                           │
-       ▼                                           ▼
-┌─────────────┐                          ┌───────────────┐
-│   Stream    │◀─────────────────────────│  Transcluder  │
-└─────────────┘                          └───────────────┘
+```mermaid
+graph TB
+    subgraph "Input Layer"
+        A["CLI Arguments"] --> B["CLI Core"]
+        C["File Input"] --> D["Stream Transform"]
+        E["String Input"] --> F["Convenience Functions"]
+    end
+    
+    subgraph "Processing Core"
+        B --> G["LineTranscluder"]
+        D --> G
+        F --> G
+        
+        G --> H["Parser"]
+        H --> I["Resolver"]
+        I --> J["File Reader"]
+        J --> K["Security Validator"]
+        K --> G
+    end
+    
+    subgraph "Output Layer"
+        G --> L["Error Accumulator"]
+        G --> M["Content Composer"]
+        L --> N["Error Comments"]
+        M --> O["Final Output"]
+    end
+    
+    style G fill:#fff3e0
+    style K fill:#ffcdd2
+    style O fill:#c8e6c9
 ```
 
 ## Components

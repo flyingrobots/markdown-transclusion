@@ -21,6 +21,8 @@ const stream = createTransclusionStream({
 
 ## REST Endpoints
 
+*Note: This example demonstrates API documentation formatting only — no actual REST endpoints are implemented in markdown-transclusion.*
+
 ### POST /api/transclude
 
 Process markdown content with transclusions.
@@ -71,6 +73,8 @@ Validate transclusion references in a file.
 
 ## GraphQL Schema
 
+*Note: This example demonstrates GraphQL schema formatting only — no actual GraphQL endpoint is implemented.*
+
 ```graphql
 type TransclusionResult {
   output: String!
@@ -94,6 +98,8 @@ type Query {
 ```
 
 ## Webhook Integration
+
+*Note: This example shows hypothetical webhook configuration — not an actual feature.*
 
 Configure webhooks to process markdown on file changes:
 
