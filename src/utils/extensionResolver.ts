@@ -36,7 +36,8 @@ export class DefaultExtensionStrategy implements ExtensionStrategy {
     
     // Add each extension
     for (const ext of extensions) {
-      paths.push(filePath + ext);
+      const extWithDot = ext.startsWith('.') ? ext : '.' + ext;
+      paths.push(filePath + extWithDot);
     }
     
     return paths;
@@ -83,7 +84,8 @@ export class PriorityExtensionStrategy implements ExtensionStrategy {
     });
     
     for (const ext of sortedExts) {
-      paths.push(filePath + ext);
+      const extWithDot = ext.startsWith('.') ? ext : '.' + ext;
+      paths.push(filePath + extWithDot);
     }
     
     return paths;

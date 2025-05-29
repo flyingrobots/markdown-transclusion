@@ -150,7 +150,7 @@ describe('transclusionProcessor', () => {
       
       const output = composeLineOutput(line, processedRefs);
       
-      expect(output).toBe('<!-- Missing: missing --> and <!-- Error: ![[error]] -->');
+      expect(output).toBe('<!-- Error: File not found --> and <!-- Error: Read failed -->');
     });
 
     it('should return original line if no processed refs', () => {

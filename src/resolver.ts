@@ -89,7 +89,7 @@ export function resolvePath(
       }
 
       // Step 6: Check if file exists
-      const existingFile = findExistingFile([relativePath], basePath);
+      const existingFile = findExistingFile([relativePath], resolutionBase);
       if (existingFile) {
         return {
           absolutePath: existingFile.absolutePath,
@@ -101,7 +101,7 @@ export function resolvePath(
 
     // No file found
     return {
-      absolutePath: resolveToAbsolutePath(substitutedReference, basePath),
+      absolutePath: resolveToAbsolutePath(substitutedReference, resolutionBase),
       exists: false,
       originalReference: reference,
       error: `File not found: ${substitutedReference}`

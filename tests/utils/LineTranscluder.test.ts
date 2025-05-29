@@ -55,11 +55,11 @@ describe('LineTranscluder', () => {
       const line = '![[non-existent]]';
       const result = await transluder.processLine(line);
       
-      expect(result).toBe('<!-- Missing: non-existent -->');
+      expect(result).toBe('<!-- Error: File not found: non-existent -->');
       
       const errors = transluder.getErrors();
       expect(errors).toHaveLength(1);
-      expect(errors[0].code).toBe('RESOLVE_ERROR');
+      expect(errors[0].code).toBe('FILE_NOT_FOUND');
     });
     
     it('should track errors for read failures', async () => {
@@ -68,7 +68,7 @@ describe('LineTranscluder', () => {
       const line = '![[simple]]';
       const result = await transluder.processLine(line);
       
-      expect(result).toBe('<!-- Error: ![[simple]] -->');
+      expect(result).toBe('<!-- Error: Read failed -->');
       
       const errors = transluder.getErrors();
       expect(errors).toHaveLength(1);

@@ -37,14 +37,14 @@ describe('processLine', () => {
 
   it('should insert HTML comment if file is missing', async () => {
     const result = await processLine('![[missing-file]]', options);
-    expect(result.output).toContain('<!-- Missing: missing-file -->');
+    expect(result.output).toContain('<!-- Error: File not found: missing-file -->');
     expect(result.errors.length).toBe(1);
-    expect(result.errors[0].code).toBe('RESOLVE_ERROR');
+    expect(result.errors[0].code).toBe('FILE_NOT_FOUND');
   });
 
   it('should insert HTML comment if readFile fails', async () => {
     const result = await processLine('![[binary.dat]]', options);
-    expect(result.output).toContain('<!-- Error: ![[binary.dat]] -->');
+    expect(result.output).toContain('<!-- Error: Binary files are not supported');
     expect(result.errors.length).toBe(1);
     expect(result.errors[0].code).toBe('READ_ERROR');
   });

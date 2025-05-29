@@ -199,7 +199,7 @@ describe('CLI Integration', () => {
       expect(result.exitCode).toBe(0);
       expect(result.stdout).toBe(''); // No content output
       expect(result.stderr).toContain('WARN');
-      expect(result.stderr).toContain('missing.md');
+      expect(result.stderr).toContain('[missing]');
       expect(result.stderr).toContain('INFO');
       expect(result.stderr).toContain('Validation completed');
     });

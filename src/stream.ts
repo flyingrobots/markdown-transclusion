@@ -8,9 +8,11 @@ export class TransclusionTransform extends Transform {
   private buffer: string = '';
   private lineTranscluder: LineTranscluder;
   private isFirstLine: boolean = true;
+  private options: TransclusionOptions;
 
   constructor(options: TransclusionOptions) {
     super({ readableObjectMode: false, writableObjectMode: false });
+    this.options = options;
     this.lineTranscluder = new LineTranscluder(options);
     this.decoder = new TextDecoder('utf-8', { fatal: false });
   }
@@ -50,6 +52,11 @@ export class TransclusionTransform extends Transform {
   private async processLine(line: string, isLastLine: boolean): Promise<void> {
     // Delegate all processing logic to LineTranscluder
     const processedLine = await this.lineTranscluder.processLine(line);
+    
+    // Don't output anything in validate-only mode
+    if (this.options.validateOnly) {
+      return;
+    }
     
     if (this.isFirstLine) {
       this.push(processedLine);

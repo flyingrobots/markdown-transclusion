@@ -146,9 +146,9 @@ export class StreamLogger implements Logger {
   
   info(message: string, data?: unknown): void {
     if (this.level >= LogLevel.INFO) {
-      this.outStream.write(this.format(LogLevel.INFO, message) + '\n');
+      this.errorStream.write(this.format(LogLevel.INFO, message) + '\n');
       if (data) {
-        this.outStream.write(JSON.stringify(data, null, 2) + '\n');
+        this.errorStream.write(JSON.stringify(data, null, 2) + '\n');
       }
     }
   }

@@ -39,7 +39,7 @@ async function main(): Promise<void> {
   const logger = new StreamLogger(
     process.stderr,
     process.stdout,
-    args.logLevel || LogLevel.INFO
+    args.logLevel !== undefined ? args.logLevel : LogLevel.INFO
   );
   
   try {
@@ -90,9 +90,13 @@ async function main(): Promise<void> {
       }
     }
     
-    // Success
+    // Validation mode feedback
     if (args.validateOnly) {
-      logger.info('Validation completed successfully');
+      if (errors.length > 0) {
+        logger.info(`Validation completed with ${errors.length} issue(s)`);
+      } else {
+        logger.info('Validation completed successfully');
+      }
     }
     
   } catch (error) {

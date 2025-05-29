@@ -1,9 +1,4 @@
-import {
-  parseAndResolveRefs,
-  readResolvedRefs,
-  composeLineOutput,
-  extractErrors
-} from './utils/transclusionProcessor';
+import { LineTranscluder } from './utils/LineTranscluder';
 import type {
   TransclusionOptions,
   TransclusionError
@@ -16,6 +11,7 @@ export interface TransclusionLineResult {
 
 /**
  * Process a single line of Markdown, replacing transclusion references with file contents.
+ * Now uses LineTranscluder for recursive processing with circular reference detection.
  * @param line - The input line.
  * @param options - Transclusion options.
  * @returns Processed result and collected errors.
@@ -24,22 +20,10 @@ export async function processLine(
   line: string,
   options: TransclusionOptions
 ): Promise<TransclusionLineResult> {
-  // Step 1: Parse and resolve references
-  const resolvedRefs = parseAndResolveRefs(line, options);
-  
-  // If no transclusion references, just return the line untouched
-  if (resolvedRefs.length === 0) {
-    return { output: line, errors: [] };
-  }
-  
-  // Step 2: Read content for resolved references
-  const processedRefs = await readResolvedRefs(resolvedRefs, options);
-  
-  // Step 3: Compose the output line
-  const output = composeLineOutput(line, processedRefs);
-  
-  // Step 4: Extract errors
-  const errors = extractErrors(processedRefs);
-  
-  return { output, errors };
+  const transcluder = new LineTranscluder(options);
+  const output = await transcluder.processLine(line);
+  return {
+    output,
+    errors: transcluder.getErrors()
+  };
 }
