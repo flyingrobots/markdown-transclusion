@@ -126,6 +126,73 @@ describe('Logger', () => {
       
       expect(consoleDebugSpy).not.toHaveBeenCalled();
     });
+    
+    it('should capture logs internally', () => {
+      const logger = new SilentLogger();
+      
+      logger.error('Error message', { error: true });
+      logger.warn('Warning message');
+      logger.info('Info message', { data: 'test' });
+      logger.debug('Debug message');
+      
+      const logs = logger.getLogs();
+      expect(logs).toHaveLength(4);
+      
+      expect(logs[0]).toMatchObject({
+        level: LogLevel.ERROR,
+        message: 'Error message',
+        data: { error: true }
+      });
+      expect(logs[0].timestamp).toBeInstanceOf(Date);
+      
+      expect(logs[1]).toMatchObject({
+        level: LogLevel.WARN,
+        message: 'Warning message'
+      });
+      
+      expect(logs[2]).toMatchObject({
+        level: LogLevel.INFO,
+        message: 'Info message',
+        data: { data: 'test' }
+      });
+      
+      expect(logs[3]).toMatchObject({
+        level: LogLevel.DEBUG,
+        message: 'Debug message'
+      });
+    });
+    
+    it('should clear logs', () => {
+      const logger = new SilentLogger();
+      
+      logger.error('Error 1');
+      logger.warn('Warning 1');
+      
+      let logs = logger.getLogs();
+      expect(logs).toHaveLength(2);
+      
+      logger.clear();
+      
+      logs = logger.getLogs();
+      expect(logs).toHaveLength(0);
+      
+      // Can log after clearing
+      logger.info('New log');
+      logs = logger.getLogs();
+      expect(logs).toHaveLength(1);
+    });
+    
+    it('should return a copy of logs', () => {
+      const logger = new SilentLogger();
+      
+      logger.info('Test log');
+      
+      const logs1 = logger.getLogs();
+      const logs2 = logger.getLogs();
+      
+      expect(logs1).not.toBe(logs2); // Different array instances
+      expect(logs1).toEqual(logs2); // Same content
+    });
   });
   
   describe('StreamLogger', () => {
@@ -192,6 +259,29 @@ describe('Logger', () => {
       expect(jsonData).toEqual(data);
     });
     
+    it('should handle data objects for all log levels', () => {
+      const logger = new StreamLogger(errorStream as any, outStream as any, LogLevel.DEBUG);
+      const errorData = { error: 'details', code: 500 };
+      const warnData = { warning: 'potential issue' };
+      const debugData = { debug: 'info', trace: ['a', 'b', 'c'] };
+      
+      logger.error('Error with data', errorData);
+      logger.warn('Warning with data', warnData);
+      logger.debug('Debug with data', debugData);
+      
+      // Error stream should have error message + data + warn message + data
+      expect(errorStream.data).toHaveLength(4);
+      expect(errorStream.data[0]).toContain('ERROR');
+      expect(JSON.parse(errorStream.data[1])).toEqual(errorData);
+      expect(errorStream.data[2]).toContain('WARN');
+      expect(JSON.parse(errorStream.data[3])).toEqual(warnData);
+      
+      // Out stream should have debug message + data
+      expect(outStream.data).toHaveLength(2);
+      expect(outStream.data[0]).toContain('DEBUG');
+      expect(JSON.parse(outStream.data[1])).toEqual(debugData);
+    });
+    
     it('should respect log level', () => {
       const logger = new StreamLogger(errorStream as any, outStream as any, LogLevel.WARN);
       
@@ -223,6 +313,45 @@ describe('Logger', () => {
       
       stderrSpy.mockRestore();
       stdoutSpy.mockRestore();
+    });
+    
+    it('should handle partial stream configuration', () => {
+      const logger1 = new StreamLogger(undefined, outStream as any);
+      const logger2 = new StreamLogger(errorStream as any, undefined);
+      
+      const stderrSpy = jest.spyOn(process.stderr, 'write').mockImplementation();
+      const stdoutSpy = jest.spyOn(process.stdout, 'write').mockImplementation();
+      
+      // Logger1: undefined error stream should use process.stderr
+      logger1.error('Error to default');
+      expect(stderrSpy).toHaveBeenCalled();
+      
+      // Logger2: undefined out stream should use process.stdout  
+      logger2.info('Info to default');
+      expect(stdoutSpy).toHaveBeenCalled();
+      
+      stderrSpy.mockRestore();
+      stdoutSpy.mockRestore();
+    });
+    
+    it('should handle setLevel dynamically', () => {
+      const logger = new StreamLogger(errorStream as any, outStream as any, LogLevel.ERROR);
+      
+      logger.debug('Should not appear');
+      logger.info('Should not appear');
+      logger.warn('Should not appear');
+      logger.error('Should appear');
+      
+      expect(errorStream.data).toHaveLength(1);
+      expect(outStream.data).toHaveLength(0);
+      
+      // Change level to DEBUG
+      logger.setLevel(LogLevel.DEBUG);
+      
+      logger.debug('Now should appear');
+      logger.info('Also should appear');
+      
+      expect(outStream.data).toHaveLength(2);
     });
   });
   
@@ -264,6 +393,34 @@ describe('Logger', () => {
       
       expect(logger1).toBeInstanceOf(ConsoleLogger);
       expect(logger2).toBeInstanceOf(ConsoleLogger);
+    });
+    
+    it('should handle undefined options', () => {
+      const logger = createLogger(undefined);
+      expect(logger).toBeInstanceOf(ConsoleLogger);
+    });
+    
+    it('should handle empty options object', () => {
+      const logger = createLogger({});
+      expect(logger).toBeInstanceOf(ConsoleLogger);
+    });
+    
+    it('should prioritize silent over streams', () => {
+      const logger = createLogger({
+        silent: true,
+        streams: { error: process.stderr, out: process.stdout }
+      });
+      expect(logger).toBeInstanceOf(SilentLogger);
+    });
+    
+    it('should handle partial streams object', () => {
+      const logger1 = createLogger({ streams: { error: process.stderr } });
+      const logger2 = createLogger({ streams: { out: process.stdout } });
+      const logger3 = createLogger({ streams: {} });
+      
+      expect(logger1).toBeInstanceOf(StreamLogger);
+      expect(logger2).toBeInstanceOf(StreamLogger);
+      expect(logger3).toBeInstanceOf(StreamLogger);
     });
   });
   
