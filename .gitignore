@@ -55,6 +55,9 @@ docker-compose.override.yml
 logs/
 *.log
 
+# Code quality reports
+code-quality-report.json
+
 # Runtime data
 pids/
 *.pid
