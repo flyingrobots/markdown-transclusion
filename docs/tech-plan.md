@@ -136,72 +136,40 @@ flowchart LR
 
 ----
 
-# Features & User Stories
+# Feature Specifications
 
-## Core Features
+The following table provides an overview of all features, their implementation status, and links to detailed specifications.
 
-### F1: Basic Transclusion Resolution
-**As a** technical writer  
-**I want to** embed content from other files using `![[filename]]` syntax  
-**So that** I can compose documents from reusable components
+| ID | Feature Title | Status | Specification |
+|----|--------------|--------|---------------|
+| 001 | Basic Transclusion Resolution | implemented | [001-basic-transclusion.md](feature-specs/001-basic-transclusion.md) |
+| 002 | Recursive Transclusion | implemented | [002-recursive-transclusion.md](feature-specs/002-recursive-transclusion.md) |
+| 003 | Path Resolution | implemented | [003-path-resolution.md](feature-specs/003-path-resolution.md) |
+| 004 | Error Handling & Debugging | implemented | [004-error-handling.md](feature-specs/004-error-handling.md) |
+| 005 | Variable Substitution | implemented | [005-variable-substitution.md](feature-specs/005-variable-substitution.md) |
+| 006 | Heading-Specific Transclusion | planned | [006-heading-extraction.md](feature-specs/006-heading-extraction.md) |
+| 007 | Wiki-Style Transclusion Syntax | planned | [007-wiki-style-syntax.md](feature-specs/007-wiki-style-syntax.md) |
+| 008 | Auto-Fix Suggestions | planned | [008-auto-fix-suggestions.md](feature-specs/008-auto-fix-suggestions.md) |
+| 009 | Per-File Configuration | planned | [009-per-file-config.md](feature-specs/009-per-file-config.md) |
+| 010 | Mermaid Diagram Validation | planned | [010-diagram-validation.md](feature-specs/010-diagram-validation.md) |
+| 011 | Line Range Selection | planned | [011-line-range-selection.md](feature-specs/011-line-range-selection.md) |
+| 012 | Transclusion Aliases | planned | [012-transclusion-aliases.md](feature-specs/012-transclusion-aliases.md) |
+| 013 | Conditional Content Blocks | planned | [013-conditional-blocks.md](feature-specs/013-conditional-blocks.md) |
 
-**Acceptance Criteria:**
-- ✅ Resolves `![[filename]]` to file contents
-- ✅ Supports relative paths from base directory
-- ✅ Handles missing files gracefully with error comments
-- ✅ Preserves original line structure for non-transclusion content
+## Feature Categories
 
-### F2: Recursive Transclusion
-**As a** documentation maintainer  
-**I want** embedded files to support their own transclusions  
-**So that** I can create deeply modular content hierarchies
+### Core Functionality (Implemented)
+- **Transclusion Engine**: Basic resolution, recursive processing, path handling
+- **Error Management**: Comprehensive error reporting and graceful degradation
+- **Dynamic Content**: Variable substitution for conditional transclusions
 
-**Acceptance Criteria:**
-- ✅ Recursively processes transclusions in embedded content
-- ✅ Detects and prevents circular references
-- ✅ Maintains proper error reporting through recursion chain
+### Enhanced Features (Planned)
+- **Content Selection**: Extract specific sections via heading references
+- **Syntax Compatibility**: Support alternative wiki-style syntax
+- **Developer Experience**: Auto-fix suggestions and per-file configuration
+- **Quality Assurance**: Validate embedded diagrams and code blocks
 
-### F3: Path Resolution
-**As a** content author  
-**I want** flexible path resolution for embedded files  
-**So that** I can organize content in logical directory structures
-
-**Acceptance Criteria:**
-- ✅ Supports relative paths: `![[../shared/header]]`
-- ✅ Supports nested paths: `![[sections/intro/overview]]`  
-- ✅ Configurable base path for resolution
-- ✅ File extension inference (.md assumed if not specified)
-
-### F4: Error Handling & Debugging
-**As a** developer integrating the library  
-**I want** comprehensive error reporting  
-**So that** I can debug transclusion issues efficiently
-
-**Acceptance Criteria:**
-- ✅ Clear error messages for missing files
-- ✅ Circular reference detection with path trace
-- ✅ Optional verbose logging for debugging
-- ✅ Graceful degradation (continues processing on errors)
-
-## Advanced Features
-
-### F5: Conditional Transclusion
-**As a** multilingual content creator  
-**I want** language-aware transclusion  
-**So that** I can maintain translations efficiently
-
-```markdown
-![[intro-{{lang}}]]  <!-- Resolves to intro-en.md, intro-es.md, etc -->
-```
-
-### F6: Heading-Specific Transclusion
-**As a** documentation author  
-**I want** to embed specific sections of files  
-**So that** I can reuse parts of documents without duplication
-
-```markdown
-![[api-reference#authentication]]  <!-- Only the Authentication section -->
-```
+For detailed information about each feature, including user stories, acceptance criteria, and implementation notes, please refer to the individual specification files in the `feature-specs/` directory.
 
 ----
 
