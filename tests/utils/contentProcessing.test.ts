@@ -1,4 +1,10 @@
-import { stripBOM, processFileContent, trimForTransclusion } from '../../src/utils/contentProcessing';
+import { 
+  stripBOM, 
+  processFileContent, 
+  trimForTransclusion,
+  detectFrontmatter,
+  stripFrontmatter
+} from '../../src/utils/contentProcessing';
 
 describe('contentProcessing', () => {
   describe('stripBOM', () => {
@@ -177,6 +183,200 @@ describe('contentProcessing', () => {
     });
   });
 
+  describe('detectFrontmatter', () => {
+    it('should detect YAML frontmatter', () => {
+      const content = '---\ntitle: Test\nauthor: John\n---\n\n# Content\n\nSome content here.';
+      const result = detectFrontmatter(content);
+      
+      expect(result.hasFrontmatter).toBe(true);
+      expect(result.type).toBe('yaml');
+      expect(result.startDelimiter).toBe('---');
+      expect(result.endDelimiter).toBe('---');
+      expect(result.startLine).toBe(0);
+      expect(result.endLine).toBe(3);
+      expect(result.contentStartIndex).toBe(content.indexOf('# Content'));
+    });
+
+    it('should detect TOML frontmatter', () => {
+      const content = '+++\ntitle = "Test"\nauthor = "John"\n+++\n\n# Content\n\nSome content here.';
+      const result = detectFrontmatter(content);
+      
+      expect(result.hasFrontmatter).toBe(true);
+      expect(result.type).toBe('toml');
+      expect(result.startDelimiter).toBe('+++');
+      expect(result.endDelimiter).toBe('+++');
+      expect(result.startLine).toBe(0);
+      expect(result.endLine).toBe(3);
+      expect(result.contentStartIndex).toBe(content.indexOf('# Content'));
+    });
+
+    it('should not detect frontmatter when no delimiter at start', () => {
+      const content = '# Title\n\nContent without frontmatter.';
+      const result = detectFrontmatter(content);
+      
+      expect(result.hasFrontmatter).toBe(false);
+      expect(result.type).toBe(null);
+      expect(result.contentStartIndex).toBe(0);
+    });
+
+    it('should not detect malformed frontmatter without closing delimiter', () => {
+      const content = '---\ntitle: Test\nauthor: John\n\n# Content';
+      const result = detectFrontmatter(content);
+      
+      expect(result.hasFrontmatter).toBe(false);
+      expect(result.type).toBe(null);
+      expect(result.contentStartIndex).toBe(0);
+    });
+
+    it('should handle empty frontmatter', () => {
+      const content = '---\n---\n\n# Content';
+      const result = detectFrontmatter(content);
+      
+      expect(result.hasFrontmatter).toBe(true);
+      expect(result.type).toBe('yaml');
+      expect(result.contentStartIndex).toBe(content.indexOf('# Content'));
+    });
+
+    it('should handle frontmatter with spaces around delimiters', () => {
+      const content = '---  \ntitle: Test\n  ---\n\n# Content';
+      const result = detectFrontmatter(content);
+      
+      expect(result.hasFrontmatter).toBe(true);
+      expect(result.type).toBe('yaml');
+    });
+
+    it('should handle CRLF line endings', () => {
+      const content = '---\r\ntitle: Test\r\n---\r\n\r\n# Content';
+      const result = detectFrontmatter(content);
+      
+      expect(result.hasFrontmatter).toBe(true);
+      expect(result.type).toBe('yaml');
+    });
+
+    it('should handle empty content', () => {
+      const result = detectFrontmatter('');
+      
+      expect(result.hasFrontmatter).toBe(false);
+      expect(result.type).toBe(null);
+      expect(result.contentStartIndex).toBe(0);
+    });
+
+    it('should handle content with only delimiter', () => {
+      const result = detectFrontmatter('---');
+      
+      expect(result.hasFrontmatter).toBe(false);
+      expect(result.type).toBe(null);
+    });
+
+    it('should not detect --- in middle of content as frontmatter', () => {
+      const content = '# Title\n\nSome content.\n\n---\n\nMore content';
+      const result = detectFrontmatter(content);
+      
+      expect(result.hasFrontmatter).toBe(false);
+      expect(result.type).toBe(null);
+    });
+  });
+
+  describe('stripFrontmatter', () => {
+    it('should strip YAML frontmatter', () => {
+      const content = '---\ntitle: Test\nauthor: John\n---\n\n# Content\n\nSome content here.';
+      const result = stripFrontmatter(content);
+      
+      expect(result).toBe('# Content\n\nSome content here.');
+    });
+
+    it('should strip TOML frontmatter', () => {
+      const content = '+++\ntitle = "Test"\nauthor = "John"\n+++\n\n# Content\n\nSome content here.';
+      const result = stripFrontmatter(content);
+      
+      expect(result).toBe('# Content\n\nSome content here.');
+    });
+
+    it('should not modify content without frontmatter', () => {
+      const content = '# Title\n\nContent without frontmatter.';
+      const result = stripFrontmatter(content);
+      
+      expect(result).toBe(content);
+    });
+
+    it('should not modify malformed frontmatter', () => {
+      const content = '---\ntitle: Test\nauthor: John\n\n# Content';
+      const result = stripFrontmatter(content);
+      
+      expect(result).toBe(content);
+    });
+
+    it('should handle empty frontmatter', () => {
+      const content = '---\n---\n\n# Content';
+      const result = stripFrontmatter(content);
+      
+      expect(result).toBe('# Content');
+    });
+
+    it('should handle frontmatter without trailing newline', () => {
+      const content = '---\ntitle: Test\n---\n# Content';
+      const result = stripFrontmatter(content);
+      
+      expect(result).toBe('# Content');
+    });
+
+    it('should handle CRLF line endings', () => {
+      const content = '---\r\ntitle: Test\r\n---\r\n\r\n# Content';
+      const result = stripFrontmatter(content);
+      
+      expect(result).toBe('# Content');
+    });
+
+    it('should preserve content structure after stripping', () => {
+      const content = '---\ntitle: Test\n---\n\n# Heading 1\n\nParagraph 1\n\n## Heading 2\n\nParagraph 2';
+      const result = stripFrontmatter(content);
+      
+      expect(result).toBe('# Heading 1\n\nParagraph 1\n\n## Heading 2\n\nParagraph 2');
+    });
+
+    it('should handle complex YAML frontmatter', () => {
+      const content = `---
+title: "Complex Document"
+author: "John Doe"
+date: 2024-01-01
+tags:
+  - markdown
+  - test
+  - frontmatter
+meta:
+  description: "A test document"
+  keywords: ["test", "example"]
+---
+
+# Main Content
+
+This is the actual content.`;
+      
+      const result = stripFrontmatter(content);
+      expect(result).toBe('# Main Content\n\nThis is the actual content.');
+    });
+
+    it('should handle complex TOML frontmatter', () => {
+      const content = `+++
+title = "Complex Document"
+author = "John Doe"
+date = 2024-01-01
+tags = ["markdown", "test", "frontmatter"]
+
+[meta]
+description = "A test document"
+keywords = ["test", "example"]
++++
+
+# Main Content
+
+This is the actual content.`;
+      
+      const result = stripFrontmatter(content);
+      expect(result).toBe('# Main Content\n\nThis is the actual content.');
+    });
+  });
+
   describe('integration scenarios', () => {
     it('should process buffer with BOM and trim result', () => {
       const content = '\uFEFF  \n\tHello World\n\t  ';
@@ -206,6 +406,28 @@ describe('contentProcessing', () => {
       const processed = processFileContent(buffer);
       // Should not strip BOM-like characters in the middle
       expect(processed).toBe(content);
+    });
+
+    it('should handle markdown with BOM and frontmatter', () => {
+      const content = '\uFEFF---\ntitle: Test\n---\n\n# Content';
+      const buffer = Buffer.from(content, 'utf8');
+      
+      const processed = processFileContent(buffer);
+      expect(processed).toBe('---\ntitle: Test\n---\n\n# Content');
+      
+      const stripped = stripFrontmatter(processed);
+      expect(stripped).toBe('# Content');
+    });
+
+    it('should handle full workflow: BOM removal, frontmatter stripping, and trimming', () => {
+      const content = '\uFEFF---\ntitle: Test\n---\n\n  # Content\n\n  ';
+      const buffer = Buffer.from(content, 'utf8');
+      
+      const processed = processFileContent(buffer);
+      const frontmatterStripped = stripFrontmatter(processed);
+      const trimmed = trimForTransclusion(frontmatterStripped);
+      
+      expect(trimmed).toBe('# Content');
     });
   });
 });

@@ -53,12 +53,14 @@ export class ConsoleLogger implements Logger {
   
   info(message: string, data?: unknown): void {
     if (this.level >= LogLevel.INFO) {
+      // eslint-disable-next-line no-console
       console.info(this.format(LogLevel.INFO, message), data || '');
     }
   }
   
   debug(message: string, data?: unknown): void {
     if (this.level >= LogLevel.DEBUG) {
+      // eslint-disable-next-line no-console
       console.debug(this.format(LogLevel.DEBUG, message), data || '');
     }
   }

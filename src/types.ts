@@ -12,6 +12,10 @@ export interface TransclusionOptions {
   cache?: FileCache;
   maxDepth?: number;
   validateOnly?: boolean;
+  /**
+   * Whether to strip YAML/TOML frontmatter from transcluded files and the main document
+   */
+  stripFrontmatter?: boolean;
 }
 
 /**
