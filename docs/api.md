@@ -201,6 +201,7 @@ interface TransclusionOptions {
   cache?: FileCache;             // Optional file cache implementation
   maxDepth?: number;             // Maximum recursion depth (default: 10)
   validateOnly?: boolean;        // Only validate, don't output content (default: false)
+  stripFrontmatter?: boolean;    // Strip YAML/TOML frontmatter from files (default: false)
 }
 ```
 
