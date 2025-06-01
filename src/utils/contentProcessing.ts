@@ -101,7 +101,6 @@ export function detectFrontmatter(content: string): FrontmatterInfo {
     if (lines[i].trim() === delimiter) {
       // Found complete frontmatter
       const endLineIndex = i;
-      const contentStartLine = i + 1;
       
       // Calculate content start position by summing lengths of frontmatter lines plus newlines
       let contentStartIndex = 0;
