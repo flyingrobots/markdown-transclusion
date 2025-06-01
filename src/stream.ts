@@ -10,7 +10,7 @@ export class TransclusionTransform extends Transform {
   private lineTranscluder: LineTranscluder;
   private isFirstLine: boolean = true;
   private options: TransclusionOptions;
-  private frontmatterState: 'none' | 'yaml-start' | 'toml-start' | 'inside' | 'complete' = 'none';
+  private frontmatterState: 'none' | 'yaml-start' | 'toml-start' | 'yaml-inside' | 'toml-inside' | 'complete' = 'none';
   private lineNumber: number = 0;
 
   constructor(options: TransclusionOptions) {
@@ -108,12 +108,19 @@ export class TransclusionTransform extends Transform {
         return false;
         
       case 'yaml-start':
-      case 'inside':
         if (trimmedLine === '---') {
           this.frontmatterState = 'complete';
           return true; // Skip the closing delimiter
         } else {
-          this.frontmatterState = 'inside';
+          this.frontmatterState = 'yaml-inside';
+          return true; // Skip frontmatter content
+        }
+        
+      case 'yaml-inside':
+        if (trimmedLine === '---') {
+          this.frontmatterState = 'complete';
+          return true; // Skip the closing delimiter
+        } else {
           return true; // Skip frontmatter content
         }
         
@@ -122,7 +129,15 @@ export class TransclusionTransform extends Transform {
           this.frontmatterState = 'complete';
           return true; // Skip the closing delimiter
         } else {
-          this.frontmatterState = 'inside';
+          this.frontmatterState = 'toml-inside';
+          return true; // Skip frontmatter content
+        }
+        
+      case 'toml-inside':
+        if (trimmedLine === '+++') {
+          this.frontmatterState = 'complete';
+          return true; // Skip the closing delimiter
+        } else {
           return true; // Skip frontmatter content
         }
         
