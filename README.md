@@ -419,6 +419,7 @@ stream.on('finish', () => {
 | `maxDepth` | number | 10 | Maximum recursion depth |
 | `strict` | boolean | false | Exit on errors |
 | `validateOnly` | boolean | false | Only validate, don't output |
+| `stripFrontmatter` | boolean | false | Strip YAML/TOML frontmatter |
 | `cache` | FileCache | none | Optional file cache |
 
 ### Error Codes
@@ -451,6 +452,7 @@ Key options:
 - `--variables` - Variable substitutions (key=value)
 - `-s, --strict` - Exit on any error
 - `--validate-only` - Check references without output
+- `--strip-frontmatter` - Remove YAML/TOML frontmatter from files
 - `--log-level` - Set verbosity (ERROR/WARN/INFO/DEBUG)
 
 ## Security

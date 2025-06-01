@@ -72,7 +72,8 @@ export async function runCli(options: CliOptions): Promise<void> {
       variables: args.variables,
       strict: args.strict,
       maxDepth: args.maxDepth || 10,
-      validateOnly: args.validateOnly
+      validateOnly: args.validateOnly,
+      stripFrontmatter: args.stripFrontmatter
     };
     
     // Create transform stream

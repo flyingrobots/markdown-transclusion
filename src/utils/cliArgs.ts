@@ -13,6 +13,7 @@ export interface CliArgs {
   variables?: Record<string, string>;
   strict?: boolean;
   validateOnly?: boolean;
+  stripFrontmatter?: boolean;
   logLevel?: LogLevel;
   help?: boolean;
   version?: boolean;
@@ -120,6 +121,10 @@ function parseLongFlag(
     case 'validate':
     case 'validate-only':
       result.validateOnly = true;
+      break;
+      
+    case 'strip-frontmatter':
+      result.stripFrontmatter = true;
       break;
       
     case 'output':
@@ -384,6 +389,8 @@ OPTIONS:
                           (default: insert error comment and continue)
   --validate-only         Check all references without outputting content
                           Useful for CI/CD validation workflows
+  --strip-frontmatter     Remove YAML/TOML frontmatter from transcluded files
+                          and the main document (frontmatter starts/ends with --- or +++)
   --log-level LEVEL       Set logging verbosity: ERROR, WARN, INFO, DEBUG
                           (default: INFO, logs go to stderr)
 

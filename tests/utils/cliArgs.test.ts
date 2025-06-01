@@ -212,6 +212,31 @@ describe('CLI Argument Parsing', () => {
         expect(result.value.validateOnly).toBe(true);
       }
     });
+    
+    it('should parse --strip-frontmatter flag', () => {
+      const result = parseCliArgs(['node', 'cli.js', '--strip-frontmatter']);
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        expect(result.value.stripFrontmatter).toBe(true);
+      }
+    });
+    
+    it('should parse combination with --strip-frontmatter', () => {
+      const result = parseCliArgs([
+        'node', 'cli.js', 
+        'input.md',
+        '--strip-frontmatter',
+        '--output', 'out.md',
+        '--strict'
+      ]);
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        expect(result.value.input).toBe('input.md');
+        expect(result.value.stripFrontmatter).toBe(true);
+        expect(result.value.output).toBe('out.md');
+        expect(result.value.strict).toBe(true);
+      }
+    });
   });
   
   describe('getHelpText', () => {
@@ -234,6 +259,7 @@ describe('CLI Argument Parsing', () => {
       expect(help).toContain('--variables');
       expect(help).toContain('--strict');
       expect(help).toContain('--validate-only');
+      expect(help).toContain('--strip-frontmatter');
       expect(help).toContain('--log-level');
     });
   });

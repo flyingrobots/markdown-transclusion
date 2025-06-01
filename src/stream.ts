@@ -10,6 +10,8 @@ export class TransclusionTransform extends Transform {
   private lineTranscluder: LineTranscluder;
   private isFirstLine: boolean = true;
   private options: TransclusionOptions;
+  private frontmatterState: 'none' | 'yaml-start' | 'toml-start' | 'yaml-inside' | 'toml-inside' | 'complete' = 'none';
+  private lineNumber: number = 0;
 
   constructor(options: TransclusionOptions) {
     super({ readableObjectMode: false, writableObjectMode: false });
@@ -60,6 +62,16 @@ export class TransclusionTransform extends Transform {
   }
 
   private async processLine(line: string, _isLastLine: boolean): Promise<void> {
+    this.lineNumber++;
+    
+    // Handle frontmatter stripping for outer document
+    if (this.options.stripFrontmatter) {
+      const shouldSkipLine = this.handleFrontmatterLine(line);
+      if (shouldSkipLine) {
+        return;
+      }
+    }
+    
     // Delegate all processing logic to LineTranscluder
     const processedLine = await this.lineTranscluder.processLine(line);
     
@@ -73,6 +85,67 @@ export class TransclusionTransform extends Transform {
       this.isFirstLine = false;
     } else {
       this.push('\n' + processedLine);
+    }
+  }
+  
+  private handleFrontmatterLine(line: string): boolean {
+    const trimmedLine = line.trim();
+    
+    switch (this.frontmatterState) {
+      case 'none':
+        if (this.lineNumber === 1) {
+          if (trimmedLine === '---') {
+            this.frontmatterState = 'yaml-start';
+            return true; // Skip this line
+          } else if (trimmedLine === '+++') {
+            this.frontmatterState = 'toml-start';
+            return true; // Skip this line
+          } else {
+            this.frontmatterState = 'complete'; // No frontmatter
+            return false;
+          }
+        }
+        return false;
+        
+      case 'yaml-start':
+        if (trimmedLine === '---') {
+          this.frontmatterState = 'complete';
+          return true; // Skip the closing delimiter
+        } else {
+          this.frontmatterState = 'yaml-inside';
+          return true; // Skip frontmatter content
+        }
+        
+      case 'yaml-inside':
+        if (trimmedLine === '---') {
+          this.frontmatterState = 'complete';
+          return true; // Skip the closing delimiter
+        } else {
+          return true; // Skip frontmatter content
+        }
+        
+      case 'toml-start':
+        if (trimmedLine === '+++') {
+          this.frontmatterState = 'complete';
+          return true; // Skip the closing delimiter
+        } else {
+          this.frontmatterState = 'toml-inside';
+          return true; // Skip frontmatter content
+        }
+        
+      case 'toml-inside':
+        if (trimmedLine === '+++') {
+          this.frontmatterState = 'complete';
+          return true; // Skip the closing delimiter
+        } else {
+          return true; // Skip frontmatter content
+        }
+        
+      case 'complete':
+        return false; // Process normally
+        
+      default:
+        return false;
     }
   }
 }

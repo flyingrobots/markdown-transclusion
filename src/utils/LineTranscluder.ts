@@ -10,7 +10,7 @@ import type {
   FileCache
 } from '../types';
 import { readFile } from '../fileReader';
-import { trimForTransclusion } from './contentProcessing';
+import { trimForTransclusion, stripFrontmatter } from './contentProcessing';
 import { extractHeadingContent } from './headingExtractor';
 
 /**
@@ -95,6 +95,11 @@ export class LineTranscluder {
         try {
           // Read the file content
           let content = await readFile(resolved.absolutePath, this.cache);
+          
+          // Strip frontmatter if requested
+          if (this.options.stripFrontmatter) {
+            content = stripFrontmatter(content);
+          }
           
           // Extract specific heading if requested
           if (ref.heading) {
