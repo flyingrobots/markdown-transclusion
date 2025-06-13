@@ -447,7 +447,7 @@ The following table provides an overview of all features, their implementation s
 | 003 | [Path Resolution](feature-specs/003-path-resolution.md) | implemented | Flexible path and extension handling |
 | 004 | [Error Handling & Debugging](feature-specs/004-error-handling.md) | implemented | Comprehensive error reporting |
 | 005 | [Variable Substitution](feature-specs/005-variable-substitution.md) | implemented | Dynamic `{{variable}}` replacement |
-| 006 | [Heading-Specific Transclusion](feature-specs/006-heading-extraction.md) | planned | Extract sections via `#heading` |
+| 006 | [Heading-Specific Transclusion](feature-specs/006-heading-extraction.md) | implemented | Extract sections via `#heading` |
 | 007 | [Wiki-Style Transclusion Syntax](feature-specs/007-wiki-style-syntax.md) | planned | MediaWiki compatibility |
 | 008 | [Auto-Fix Suggestions](feature-specs/008-auto-fix-suggestions.md) | planned | Smart error recovery |
 | 009 | [Per-File Configuration](feature-specs/009-per-file-config.md) | planned | Frontmatter settings |
