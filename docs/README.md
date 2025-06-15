@@ -28,6 +28,15 @@ The following table provides an overview of all features and their current statu
 | 011 | [Line Range Selection](feature-specs/011-line-range-selection.md) | 🔄 planned | Include specific line ranges |
 | 012 | [Transclusion Aliases](feature-specs/012-transclusion-aliases.md) | 🔄 planned | Reusable path shortcuts |
 | 013 | [Conditional Content Blocks](feature-specs/013-conditional-blocks.md) | 🔄 planned | IF/ELSE content logic |
+| 014 | [Frontmatter Stripping](feature-specs/014-frontmatter-stripping.md) | ⏳ pending | Remove YAML frontmatter from transclusions |
+| 015 | [Code Block Extraction](feature-specs/015-code-block-extraction.md) | 🔄 planned | Extract specific code blocks by language |
+| 016 | [Line Range Selection](feature-specs/016-line-range-selection.md) | 🔄 planned | Include specific line ranges |
+| 017 | [Multiple Heading Extraction](feature-specs/017-multiple-heading-extraction.md) | 🔄 planned | Extract multiple headings in one reference |
+| 018 | [Watch Mode](feature-specs/018-watch-mode.md) | 🔄 planned | Auto-rebuild on file changes |
+| 019 | [Dry Run Mode](feature-specs/019-dry-run-mode.md) | 🔄 planned | Preview without writing files |
+| 020 | [Include/Exclude Patterns](feature-specs/020-include-exclude-patterns.md) | 🔄 planned | Filter files by glob patterns |
+| 021 | [Conditional Transclusion](feature-specs/021-conditional-transclusion.md) | 🔄 planned | Include content based on conditions |
+| 022 | [AST-Based Parsing](feature-specs/022-ast-based-parsing.md) | 🔄 planned | Replace regex with AST parser |
 
 ## Quick Links
 
