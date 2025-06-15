@@ -447,7 +447,7 @@ The following table provides an overview of all features, their implementation s
 | 003 | [Path Resolution](feature-specs/003-path-resolution.md) | implemented | Flexible path and extension handling |
 | 004 | [Error Handling & Debugging](feature-specs/004-error-handling.md) | implemented | Comprehensive error reporting |
 | 005 | [Variable Substitution](feature-specs/005-variable-substitution.md) | implemented | Dynamic `{{variable}}` replacement |
-| 006 | [Heading-Specific Transclusion](feature-specs/006-heading-extraction.md) | planned | Extract sections via `#heading` |
+| 006 | [Heading-Specific Transclusion](feature-specs/006-heading-extraction.md) | implemented | Extract sections via `#heading` |
 | 007 | [Wiki-Style Transclusion Syntax](feature-specs/007-wiki-style-syntax.md) | planned | MediaWiki compatibility |
 | 008 | [Auto-Fix Suggestions](feature-specs/008-auto-fix-suggestions.md) | planned | Smart error recovery |
 | 009 | [Per-File Configuration](feature-specs/009-per-file-config.md) | planned | Frontmatter settings |
@@ -455,6 +455,15 @@ The following table provides an overview of all features, their implementation s
 | 011 | [Line Range Selection](feature-specs/011-line-range-selection.md) | planned | Line-based extraction |
 | 012 | [Transclusion Aliases](feature-specs/012-transclusion-aliases.md) | planned | Path shortcuts |
 | 013 | [Conditional Content Blocks](feature-specs/013-conditional-blocks.md) | planned | IF/ELSE logic |
+| 014 | [Frontmatter Stripping](feature-specs/014-frontmatter-stripping.md) | pending | Remove YAML frontmatter |
+| 015 | [Code Block Extraction](feature-specs/015-code-block-extraction.md) | planned | Extract code blocks |
+| 016 | [Line Range Selection](feature-specs/016-line-range-selection.md) | planned | Line range selection |
+| 017 | [Multiple Heading Extraction](feature-specs/017-multiple-heading-extraction.md) | planned | Multiple headings |
+| 018 | [Watch Mode](feature-specs/018-watch-mode.md) | planned | Auto-rebuild |
+| 019 | [Dry Run Mode](feature-specs/019-dry-run-mode.md) | planned | Preview mode |
+| 020 | [Include/Exclude Patterns](feature-specs/020-include-exclude-patterns.md) | planned | File filtering |
+| 021 | [Conditional Transclusion](feature-specs/021-conditional-transclusion.md) | planned | Conditional includes |
+| 022 | [AST-Based Parsing](feature-specs/022-ast-based-parsing.md) | planned | AST parser |
 
 ## Feature Integration Architecture
 
