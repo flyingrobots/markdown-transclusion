@@ -396,6 +396,209 @@ describe('cliCore', () => {
     });
   });
 
+  describe('Dry Run Mode', () => {
+    it('should display dry run header and collect output in buffer', async () => {
+      const mockTransform = {
+        on: jest.fn(),
+        errors: [],
+        processedFiles: ['sections/intro.md']
+      };
+      
+      (TransclusionTransform as unknown as jest.Mock).mockImplementation(() => mockTransform);
+      (parseCliArgs as jest.Mock).mockReturnValue({ 
+        ok: true, 
+        value: { dryRun: true, input: 'test.md' } 
+      });
+      
+      // Mock pipeline to simulate processed content
+      (pipeline as jest.Mock).mockImplementation(async (input: any, transform: any, output: any) => {
+        // Simulate writing content to the buffer
+        output.write(Buffer.from('# Test Document\n\nProcessed content here.\n'));
+      });
+      
+      await runCli({
+        argv: ['node', 'cli.js', 'test.md', '--dry-run'],
+        stdin: mockStdin,
+        stdout: mockStdout,
+        stderr: mockStderr,
+        exit: mockExit
+      });
+      
+      const output = stdoutData.join('');
+      expect(output).toContain('🔍 DRY RUN MODE - No files will be modified');
+      expect(output).toContain('Processing: test.md');
+      expect(output).toContain('├── Reading: sections/intro.md');
+      expect(output).toContain('=== PROCESSED CONTENT ===');
+      expect(output).toContain('# Test Document');
+      expect(output).toContain('=== SUMMARY ===');
+      expect(output).toContain('📄 Files processed: 2');
+      expect(output).toContain('🔗 Transclusions resolved: 1');
+      expect(output).toContain('❌ Errors: 0');
+      expect(output).toContain('✓ Dry run completed successfully');
+    });
+    
+    it('should handle dry run with errors', async () => {
+      const mockTransform = {
+        on: jest.fn(),
+        errors: [
+          { path: 'missing.md', message: 'File not found: missing.md' },
+          { path: 'invalid.md', message: 'Invalid reference' }
+        ],
+        processedFiles: []
+      };
+      
+      (TransclusionTransform as unknown as jest.Mock).mockImplementation(() => mockTransform);
+      (parseCliArgs as jest.Mock).mockReturnValue({ 
+        ok: true, 
+        value: { dryRun: true, input: 'test.md' } 
+      });
+      
+      (pipeline as jest.Mock).mockImplementation(async (input: any, transform: any, output: any) => {
+        output.write(Buffer.from('# Test Document\n\n<!-- Error comments here -->\n'));
+      });
+      
+      await runCli({
+        argv: ['node', 'cli.js', 'test.md', '--dry-run'],
+        stdin: mockStdin,
+        stdout: mockStdout,
+        stderr: mockStderr,
+        exit: mockExit
+      });
+      
+      const output = stdoutData.join('');
+      expect(output).toContain('🔍 DRY RUN MODE - No files will be modified');
+      expect(output).toContain('└── No transclusions found');
+      expect(output).toContain('❌ Errors: 2');
+      expect(output).toContain('⚠️  Dry run completed with errors');
+      expect(output).toContain('Fix issues before actual processing');
+      
+      // Should still log warnings to stderr
+      const errorOutput = stderrData.join('');
+      expect(errorOutput).toContain('[missing.md] File not found: missing.md');
+      expect(errorOutput).toContain('[invalid.md] Invalid reference');
+    });
+    
+    it('should handle dry run from stdin', async () => {
+      const mockTransform = {
+        on: jest.fn(),
+        errors: [],
+        processedFiles: ['lib/utils.md', 'examples/basic.md']
+      };
+      
+      (TransclusionTransform as unknown as jest.Mock).mockImplementation(() => mockTransform);
+      (parseCliArgs as jest.Mock).mockReturnValue({ 
+        ok: true, 
+        value: { dryRun: true } // No input file specified
+      });
+      
+      (pipeline as jest.Mock).mockImplementation(async (input: any, transform: any, output: any) => {
+        output.write(Buffer.from('Content from stdin\n'));
+      });
+      
+      await runCli({
+        argv: ['node', 'cli.js', '--dry-run'],
+        stdin: mockStdin,
+        stdout: mockStdout,
+        stderr: mockStderr,
+        exit: mockExit
+      });
+      
+      const output = stdoutData.join('');
+      expect(output).toContain('Processing: stdin');
+      expect(output).toContain('├── Reading: lib/utils.md');
+      expect(output).toContain('├── Reading: examples/basic.md');
+      expect(output).toContain('📄 Files processed: 3');
+      expect(output).toContain('🔗 Transclusions resolved: 2');
+    });
+    
+    it('should show correct ready command with output flag', async () => {
+      const mockTransform = {
+        on: jest.fn(),
+        errors: [],
+        processedFiles: []
+      };
+      
+      (TransclusionTransform as unknown as jest.Mock).mockImplementation(() => mockTransform);
+      (parseCliArgs as jest.Mock).mockReturnValue({ 
+        ok: true, 
+        value: { dryRun: true, input: 'docs.md', output: 'result.md' } 
+      });
+      
+      (pipeline as jest.Mock).mockImplementation(async (input: any, transform: any, output: any) => {
+        output.write(Buffer.from('Simple content\n'));
+      });
+      
+      await runCli({
+        argv: ['node', 'cli.js', 'docs.md', '--dry-run', '--output', 'result.md'],
+        stdin: mockStdin,
+        stdout: mockStdout,
+        stderr: mockStderr,
+        exit: mockExit
+      });
+      
+      const output = stdoutData.join('');
+      expect(output).toContain('Ready for actual processing with: markdown-transclusion docs.md --output result.md');
+    });
+    
+    it('should show correct ready command without output flag', async () => {
+      const mockTransform = {
+        on: jest.fn(),
+        errors: [],
+        processedFiles: []
+      };
+      
+      (TransclusionTransform as unknown as jest.Mock).mockImplementation(() => mockTransform);
+      (parseCliArgs as jest.Mock).mockReturnValue({ 
+        ok: true, 
+        value: { dryRun: true, input: 'docs.md' } 
+      });
+      
+      (pipeline as jest.Mock).mockImplementation(async (input: any, transform: any, output: any) => {
+        output.write(Buffer.from('Simple content\n'));
+      });
+      
+      await runCli({
+        argv: ['node', 'cli.js', 'docs.md', '--dry-run'],
+        stdin: mockStdin,
+        stdout: mockStdout,
+        stderr: mockStderr,
+        exit: mockExit
+      });
+      
+      const output = stdoutData.join('');
+      expect(output).toContain('Ready for actual processing with: markdown-transclusion docs.md');
+    });
+    
+    it('should use buffer stream instead of file output in dry run', async () => {
+      const mockTransform = {
+        on: jest.fn(),
+        errors: [],
+        processedFiles: []
+      };
+      
+      (TransclusionTransform as unknown as jest.Mock).mockImplementation(() => mockTransform);
+      (parseCliArgs as jest.Mock).mockReturnValue({ 
+        ok: true, 
+        value: { dryRun: true, input: 'test.md', output: 'should-be-ignored.md' } 
+      });
+      
+      const mockFileStream = { write: jest.fn() };
+      (createWriteStream as jest.Mock).mockReturnValue(mockFileStream);
+      
+      await runCli({
+        argv: ['node', 'cli.js', 'test.md', '--dry-run', '--output', 'should-be-ignored.md'],
+        stdin: mockStdin,
+        stdout: mockStdout,
+        stderr: mockStderr,
+        exit: mockExit
+      });
+      
+      // Should not create a file stream when in dry run mode
+      expect(createWriteStream).not.toHaveBeenCalled();
+      expect(mockFileStream.write).not.toHaveBeenCalled();
+    });
+  });
+
   describe('Options Configuration', () => {
     it('should pass all options to TransclusionTransform', async () => {
       const options = {
