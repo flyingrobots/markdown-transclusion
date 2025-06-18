@@ -86,6 +86,14 @@ describe('CLI Argument Parsing', () => {
       }
     });
     
+    it('should parse dry-run flag', () => {
+      const result = parseCliArgs(['node', 'cli.js', '--dry-run']);
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        expect(result.value.dryRun).toBe(true);
+      }
+    });
+    
     it('should error on unknown long flag', () => {
       const result = parseCliArgs(['node', 'cli.js', '--unknown-flag']);
       expect(result.ok).toBe(false);

@@ -33,6 +33,11 @@ export class TransclusionTransform extends Transform {
   get errors(): TransclusionError[] {
     return this.lineTranscluder.getErrors();
   }
+  
+  // Delegate processed files tracking to LineTranscluder
+  get processedFiles(): string[] {
+    return this.lineTranscluder.getProcessedFiles();
+  }
 
   async _transform(chunk: Buffer, _encoding: BufferEncoding, callback: TransformCallback) {
     try {

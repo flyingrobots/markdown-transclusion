@@ -1,6 +1,7 @@
 import { createReadStream, createWriteStream } from 'fs';
 import { resolve } from 'path';
 import { pipeline } from 'stream/promises';
+import { Writable } from 'stream';
 import { TransclusionTransform } from './stream';
 import { parseCliArgs, getHelpText, getVersionText } from './utils/cliArgs';
 import { StreamLogger, LogLevel } from './utils/logger';
@@ -84,10 +85,23 @@ export async function runCli(options: CliOptions): Promise<void> {
       ? createReadStream(resolve(args.input))
       : stdin;
     
-    // Set up output stream
-    const output = args.output
-      ? createWriteStream(resolve(args.output))
-      : stdout;
+    // Set up output stream (dry run always goes to stdout)
+    let output: NodeJS.WritableStream;
+    let dryRunBuffer: Buffer[] = [];
+    
+    if (args.dryRun) {
+      // In dry run mode, collect output in buffer
+      output = new Writable({
+        write(chunk: Buffer, encoding, callback) {
+          dryRunBuffer.push(chunk);
+          callback();
+        }
+      });
+    } else {
+      output = args.output
+        ? createWriteStream(resolve(args.output))
+        : stdout;
+    }
     
     // Handle transform errors
     transform.on('error', (error) => {
@@ -114,8 +128,54 @@ export async function runCli(options: CliOptions): Promise<void> {
       }
     }
     
+    // Dry run mode output
+    if (args.dryRun) {
+      const processedContent = Buffer.concat(dryRunBuffer).toString();
+      const processedFiles = transform.processedFiles || [];
+      const transclusionCount = processedFiles.length;
+      
+      // Show dry run header
+      stdout.write('🔍 DRY RUN MODE - No files will be modified\n\n');
+      
+      if (args.input) {
+        stdout.write(`Processing: ${args.input}\n`);
+      } else {
+        stdout.write('Processing: stdin\n');
+      }
+      
+      // Show processed files
+      for (const file of processedFiles) {
+        stdout.write(`├── Reading: ${file}\n`);
+      }
+      
+      if (processedFiles.length === 0) {
+        stdout.write('└── No transclusions found\n');
+      }
+      
+      stdout.write('\n=== PROCESSED CONTENT ===\n');
+      stdout.write(processedContent);
+      stdout.write('\n=== SUMMARY ===\n');
+      stdout.write(`📄 Files processed: ${processedFiles.length + 1}\n`);
+      stdout.write(`🔗 Transclusions resolved: ${transclusionCount}\n`);
+      stdout.write(`⚠️  Warnings: 0\n`);
+      stdout.write(`❌ Errors: ${errors.length}\n`);
+      
+      if (errors.length > 0) {
+        stdout.write('\n⚠️  Dry run completed with errors\n');
+        stdout.write('   Fix issues before actual processing\n');
+      } else {
+        stdout.write('\n✓ Dry run completed successfully\n');
+        if (args.input && args.output) {
+          stdout.write(`  Ready for actual processing with: markdown-transclusion ${args.input} --output ${args.output}\n`);
+        } else if (args.input) {
+          stdout.write(`  Ready for actual processing with: markdown-transclusion ${args.input}\n`);
+        } else {
+          stdout.write('  Ready for actual processing\n');
+        }
+      }
+    }
     // Validation mode feedback
-    if (args.validateOnly) {
+    else if (args.validateOnly) {
       if (errors.length > 0) {
         logger.info(`Validation completed with ${errors.length} issue(s)`);
       } else {

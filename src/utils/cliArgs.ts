@@ -14,6 +14,7 @@ export interface CliArgs {
   strict?: boolean;
   validateOnly?: boolean;
   stripFrontmatter?: boolean;
+  dryRun?: boolean;
   logLevel?: LogLevel;
   help?: boolean;
   version?: boolean;
@@ -125,6 +126,10 @@ function parseLongFlag(
       
     case 'strip-frontmatter':
       result.stripFrontmatter = true;
+      break;
+      
+    case 'dry-run':
+      result.dryRun = true;
       break;
       
     case 'output':
@@ -389,6 +394,8 @@ OPTIONS:
                           (default: insert error comment and continue)
   --validate-only         Check all references without outputting content
                           Useful for CI/CD validation workflows
+  --dry-run               Preview transclusion processing without writing files
+                          Shows processed content to stdout and processing statistics
   --strip-frontmatter     Remove YAML/TOML frontmatter from transcluded files
                           and the main document (frontmatter starts/ends with --- or +++)
   --log-level LEVEL       Set logging verbosity: ERROR, WARN, INFO, DEBUG
@@ -412,6 +419,9 @@ EXAMPLES:
 
   # Validate all references in documentation
   markdown-transclusion docs/index.md --validate-only --strict
+
+  # Preview processing without writing files
+  markdown-transclusion docs.md --dry-run
 
   # Process files in different directory
   markdown-transclusion README.md --base-path ./docs

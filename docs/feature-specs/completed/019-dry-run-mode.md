@@ -1,7 +1,7 @@
 ---
 id: 019
 title: "Dry Run Mode"
-status: planned
+status: implemented
 updated: 2025-01-06T16:05:00Z
 ---
 

@@ -1,7 +1,7 @@
 ---
 id: 014
 title: "Frontmatter Stripping"
-status: pending
+status: implemented
 updated: 2025-01-06T12:00:00Z
 ---
 
