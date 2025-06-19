@@ -72,7 +72,7 @@ describe('Property-Based Tests', () => {
         fc.property(
           fc.tuple(
             fc.string().filter(s => s.length > 0 && !s.includes('#') && !s.includes(']')),
-            fc.string().filter(s => s.length > 0 && !s.includes(']'))
+            fc.string().filter(s => s.length > 0 && !s.includes(']') && !s.includes(':'))
           ),
           ([filename, heading]) => {
             const input = `![[${filename}#${heading}]]`;
@@ -85,6 +85,33 @@ describe('Property-Based Tests', () => {
               if (result.heading) {
                 expect(result.heading).toBe(heading.trim());
               }
+              expect(result.original).toBe(input);
+            }
+          }
+        ),
+        { numRuns: 500 }
+      );
+    });
+
+    it('should handle references with heading ranges', () => {
+      fc.assert(
+        fc.property(
+          fc.tuple(
+            fc.string().filter(s => s.length > 0 && !s.includes('#') && !s.includes(']')),
+            fc.string().filter(s => s.length > 0 && !s.includes(']') && !s.includes(':')),
+            fc.string().filter(s => !s.includes(']'))
+          ),
+          ([filename, startHeading, endHeading]) => {
+            const input = `![[${filename}#${startHeading}:${endHeading}]]`;
+            const results = parseTransclusionReferences(input);
+            const result = results.length > 0 ? results[0] : null;
+            
+            if (result) {
+              expect(result.path).toBe(filename.trim());
+              if (startHeading.trim()) {
+                expect(result.heading).toBe(startHeading.trim());
+              }
+              expect(result.headingEnd).toBe(endHeading.trim());
               expect(result.original).toBe(input);
             }
           }

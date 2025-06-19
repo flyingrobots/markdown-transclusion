@@ -234,7 +234,7 @@ describe('cliCore', () => {
       const errorHandler = mockTransform.on.mock.calls.find(call => call[0] === 'error')[1];
       errorHandler(error);
       
-      expect(stderrData.join('')).toContain('Transclusion error');
+      expect(stderrData.join('')).toContain('Error: File not found');
       expect(mockExit).not.toHaveBeenCalled();
     });
     
@@ -266,7 +266,7 @@ describe('cliCore', () => {
       // Wait for graceful exit to complete
       await new Promise(resolve => setTimeout(resolve, 20));
       
-      expect(stderrData.join('')).toContain('Transclusion error');
+      expect(stderrData.join('')).toContain('Error: File not found');
       expect(mockExit).toHaveBeenCalledWith(1);
     });
     
@@ -293,8 +293,11 @@ describe('cliCore', () => {
         exit: mockExit
       });
       
-      expect(stderrData.join('')).toContain('[file1.md:10] Missing reference');
-      expect(stderrData.join('')).toContain('[file2.md] File not found');
+      // In default mode, errors are shown in simple format
+      expect(stderrData.join('')).toContain('Error: Missing reference');
+      expect(stderrData.join('')).toContain('in file1.md:10');
+      expect(stderrData.join('')).toContain('Error: File not found');
+      expect(stderrData.join('')).toContain('in file2.md');
       expect(mockExit).not.toHaveBeenCalled();
     });
     
@@ -320,7 +323,8 @@ describe('cliCore', () => {
         exit: mockExit
       });
       
-      expect(stderrData.join('')).toContain('Processing failed with 1 error(s)');
+      // In default mode with strict, just the error is shown
+      expect(stderrData.join('')).toContain('Error: Missing reference');
       expect(mockExit).toHaveBeenCalledWith(1);
     });
     
@@ -366,7 +370,9 @@ describe('cliCore', () => {
         exit: mockExit
       });
       
-      expect(stdoutData.join('')).toContain('Validation completed successfully');
+      // In default mode, validation success is silent
+      expect(stderrData.join('')).toBe('');
+      expect(stdoutData.join('')).toBe('');
     });
     
     it('should report validation issues', async () => {
@@ -392,7 +398,8 @@ describe('cliCore', () => {
         exit: mockExit
       });
       
-      expect(stdoutData.join('')).toContain('Validation completed with 2 issue(s)');
+      // In default mode, validation shows errors on stderr
+      expect(stderrData.join('')).toContain('Validation failed with 2 error(s)');
     });
   });
 
@@ -472,10 +479,10 @@ describe('cliCore', () => {
       expect(output).toContain('⚠️  Dry run completed with errors');
       expect(output).toContain('Fix issues before actual processing');
       
-      // Should still log warnings to stderr
-      const errorOutput = stderrData.join('');
-      expect(errorOutput).toContain('[missing.md] File not found: missing.md');
-      expect(errorOutput).toContain('[invalid.md] Invalid reference');
+      // Errors are no longer shown on stderr in dry run mode, they're in the dry run output
+      const dryRunOutput = stdoutData.join('');
+      expect(dryRunOutput).toContain('❌ Errors: 2');
+      expect(dryRunOutput).toContain('⚠️  Dry run completed with errors');
     });
     
     it('should handle dry run from stdin', async () => {

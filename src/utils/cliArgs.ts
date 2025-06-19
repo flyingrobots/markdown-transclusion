@@ -18,6 +18,11 @@ export interface CliArgs {
   logLevel?: LogLevel;
   help?: boolean;
   version?: boolean;
+  verbose?: boolean;
+  porcelain?: boolean;
+  progress?: boolean;
+  plugins?: string[];
+  pluginConfig?: string;
 }
 
 /**
@@ -91,6 +96,16 @@ export function parseCliArgs(argv: string[]): Result<CliArgs, CliArgsError> {
     });
   }
   
+  // Validate output mode conflicts
+  const outputModeCount = [args.verbose, args.porcelain, args.progress].filter(Boolean).length;
+  if (outputModeCount > 1) {
+    return Err({
+      code: CliArgsErrorCode.CONFLICTING_FLAGS,
+      message: 'Cannot use multiple output modes (--verbose, --porcelain, --progress) together',
+      flag: '--verbose'
+    });
+  }
+  
   return Ok(args);
 }
 
@@ -130,6 +145,18 @@ function parseLongFlag(
       
     case 'dry-run':
       result.dryRun = true;
+      break;
+      
+    case 'verbose':
+      result.verbose = true;
+      break;
+      
+    case 'porcelain':
+      result.porcelain = true;
+      break;
+      
+    case 'progress':
+      result.progress = true;
       break;
       
     case 'output':
@@ -233,6 +260,36 @@ function parseLongFlag(
         });
       }
       result.logLevel = levelResult.value;
+      nextIndex++;
+      break;
+    }
+    
+    case 'plugins':
+    case 'plugin': {
+      if (nextIndex >= args.length || args[nextIndex].startsWith('-')) {
+        return Err({
+          code: CliArgsErrorCode.MISSING_VALUE,
+          message: `Flag --${flagName} requires a value`,
+          flag: `--${flagName}`
+        });
+      }
+      const pluginValue = args[nextIndex];
+      // Support comma-separated list of plugins
+      const pluginList = pluginValue.split(',').map(p => p.trim()).filter(Boolean);
+      result.plugins = (result.plugins || []).concat(pluginList);
+      nextIndex++;
+      break;
+    }
+    
+    case 'plugin-config': {
+      if (nextIndex >= args.length || args[nextIndex].startsWith('-')) {
+        return Err({
+          code: CliArgsErrorCode.MISSING_VALUE,
+          message: `Flag --${flagName} requires a value`,
+          flag: `--${flagName}`
+        });
+      }
+      result.pluginConfig = args[nextIndex];
       nextIndex++;
       break;
     }
@@ -400,6 +457,19 @@ OPTIONS:
                           and the main document (frontmatter starts/ends with --- or +++)
   --log-level LEVEL       Set logging verbosity: ERROR, WARN, INFO, DEBUG
                           (default: INFO, logs go to stderr)
+  --verbose               Enable detailed human-readable progress output
+                          Shows file processing, timing, and statistics
+  --porcelain             Machine-readable output format for scripting
+                          Outputs tab-separated values for easy parsing
+  --progress              Show real-time progress bars during processing
+                          Useful for large documents with many transclusions
+
+PLUGIN OPTIONS:
+  --plugins PATHS         Comma-separated list of plugin files/directories to load
+                          Supports .js, .mjs, and .ts files
+                          Example: --plugins ./plugins/,./custom-plugin.js
+  --plugin-config FILE    JSON configuration file for plugin settings
+                          Contains plugin-specific configuration options
 
 TRANSCLUSION SYNTAX:
   ![[filename]]           Include entire file
@@ -434,6 +504,22 @@ EXAMPLES:
 
   # Silent mode (only errors)
   markdown-transclusion doc.md --log-level ERROR
+
+  # Verbose output for debugging
+  markdown-transclusion complex-doc.md --verbose
+
+  # Machine-readable output for scripts
+  markdown-transclusion doc.md --porcelain | awk -F'\t' '$1=="ERROR" {print $3}'
+
+  # Show progress for large documents
+  markdown-transclusion book.md --progress --output book-compiled.md
+
+OUTPUT MODES:
+  Default mode follows Unix "silence is golden" principle - only errors shown
+  --verbose shows detailed processing information to stderr
+  --porcelain outputs machine-readable format to stderr
+  --progress displays real-time progress bars to stderr
+  Note: Content always goes to stdout, metadata/progress to stderr
 
 EXIT CODES:
   0  Success

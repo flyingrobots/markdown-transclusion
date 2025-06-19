@@ -2,16 +2,15 @@ import {
   parseAndResolveRefs,
   composeLineOutput,
   extractErrors,
-  ProcessedReference
+  ProcessedReference,
+  readResolvedRefs
 } from './transclusionProcessor';
 import type {
   TransclusionOptions,
   TransclusionError,
   FileCache
 } from '../types';
-import { readFile } from '../fileReader';
-import { trimForTransclusion, stripFrontmatter } from './contentProcessing';
-import { extractHeadingContent } from './headingExtractor';
+import { stripFrontmatter } from './contentProcessing';
 
 /**
  * Handles the business logic of line transclusion
@@ -36,7 +35,7 @@ export class LineTranscluder {
    * Process a single line, handling transclusions
    */
   async processLine(line: string): Promise<string> {
-    return this.processLineWithDepth(line, 0, new Set<string>(), undefined);
+    return this.processLineWithDepth(line, 0, new Set<string>(), this.options.initialFilePath);
   }
   
   /**
@@ -71,101 +70,67 @@ export class LineTranscluder {
       })));
     }
     
-    // Process references with circular detection and recursive processing
-    const processedRefs: ProcessedReference[] = [];
+    // Use readResolvedRefs for consistency and to avoid duplication
+    let processedRefs = await readResolvedRefs(resolvedRefs, this.options);
     
-    for (const { ref, resolved } of resolvedRefs) {
-      if (resolved.exists) {
+    // Now handle circular references and recursive processing
+    const finalProcessedRefs: ProcessedReference[] = [];
+    
+    for (const processed of processedRefs) {
+      const { ref, resolved, content, error } = processed;
+      
+      if (resolved.exists && content !== undefined) {
         // Track processed files
         this.processedFiles.add(resolved.absolutePath);
         
         // Check for circular reference
         if (visitedStack.has(resolved.absolutePath)) {
           const circularPath = Array.from(visitedStack).join(' → ') + ' → ' + resolved.absolutePath;
-          const error: TransclusionError = {
+          const circularError: TransclusionError = {
             message: `Circular reference detected: ${circularPath}`,
             path: resolved.absolutePath,
             code: 'CIRCULAR_REFERENCE'
           };
-          this.errors.push(error);
-          processedRefs.push({ ref, resolved, error });
+          this.errors.push(circularError);
+          finalProcessedRefs.push({ ref, resolved, error: circularError });
           continue;
         }
         
-        try {
-          // Read the file content
-          let content = await readFile(resolved.absolutePath, this.cache);
-          
-          // Strip frontmatter if requested
-          if (this.options.stripFrontmatter) {
-            content = stripFrontmatter(content);
-          }
-          
-          // Extract specific heading if requested
-          if (ref.heading) {
-            const headingContent = extractHeadingContent(content, ref.heading);
-            if (headingContent === null) {
-              const error: TransclusionError = {
-                message: `Heading "${ref.heading}" not found in ${resolved.absolutePath}`,
-                path: resolved.absolutePath,
-                code: 'HEADING_NOT_FOUND'
-              };
-              this.errors.push(error);
-              processedRefs.push({ ref, resolved, error });
-              continue;
-            }
-            content = headingContent;
-          }
-          
-          const trimmedContent = trimForTransclusion(content);
-          
-          // Create new visited stack for this branch
-          const newVisitedStack = new Set(visitedStack);
-          newVisitedStack.add(resolved.absolutePath);
-          
-          // Recursively process the content
-          const processedContent = await this.processContentRecursively(
-            trimmedContent,
-            depth + 1,
-            newVisitedStack,
-            resolved.absolutePath
-          );
-          
-          processedRefs.push({
-            ref,
-            resolved,
-            content: processedContent
-          });
-        } catch (err) {
-          processedRefs.push({
-            ref,
-            resolved,
-            error: {
-              message: (err as Error).message,
-              path: resolved.absolutePath,
-              code: 'READ_ERROR'
-            }
-          });
+        // Strip frontmatter if requested (if not already done)
+        let processedContent = content;
+        if (this.options.stripFrontmatter && !content.startsWith('---') && !content.startsWith('+++')) {
+          processedContent = stripFrontmatter(content);
         }
-      } else {
-        processedRefs.push({
+        
+        // Create new visited stack for this branch
+        const newVisitedStack = new Set(visitedStack);
+        newVisitedStack.add(resolved.absolutePath);
+        
+        // Recursively process the content
+        const recursiveContent = await this.processContentRecursively(
+          processedContent,
+          depth + 1,
+          newVisitedStack,
+          resolved.absolutePath
+        );
+        
+        finalProcessedRefs.push({
           ref,
           resolved,
-          error: {
-            message: resolved.error ?? 'File not found',
-            path: ref.path,
-            code: 'FILE_NOT_FOUND'
-          }
+          content: recursiveContent
         });
+      } else {
+        // Pass through errors
+        finalProcessedRefs.push(processed);
       }
     }
     
     // Collect errors
-    const errors = extractErrors(processedRefs);
+    const errors = extractErrors(finalProcessedRefs);
     this.errors.push(...errors);
     
     // Compose output
-    return composeLineOutput(line, processedRefs);
+    return composeLineOutput(line, finalProcessedRefs);
   }
   
   /**

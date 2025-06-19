@@ -15,14 +15,14 @@ As a documentation maintainer, I want to strip frontmatter from included files a
 
 ## Acceptance Criteria
 
-- [ ] Detects YAML frontmatter (delimited by `---`)
-- [ ] Detects TOML frontmatter (delimited by `+++`)
-- [ ] Strips frontmatter from transcluded files when `stripFrontmatter` option is enabled
-- [ ] Strips frontmatter from the outer document when `stripFrontmatter` option is enabled
-- [ ] Preserves content integrity after frontmatter removal
-- [ ] CLI flag `--strip-frontmatter` enables this behavior
-- [ ] Handles edge cases: empty frontmatter, malformed frontmatter, missing closing delimiters
-- [ ] Maintains line numbers for error reporting accuracy
+- [x] Detects YAML frontmatter (delimited by `---`)
+- [x] Detects TOML frontmatter (delimited by `+++`)
+- [x] Strips frontmatter from transcluded files when `stripFrontmatter` option is enabled
+- [x] Strips frontmatter from the outer document when `stripFrontmatter` option is enabled
+- [x] Preserves content integrity after frontmatter removal
+- [x] CLI flag `--strip-frontmatter` enables this behavior
+- [x] Handles edge cases: empty frontmatter, malformed frontmatter, missing closing delimiters
+- [x] Maintains line numbers for error reporting accuracy
 
 ## Notes
 

@@ -17,14 +17,14 @@ As a **documentation team lead**, I want to preview what transclusion processing
 
 ## Acceptance Criteria
 
-- [ ] Support `--dry-run` CLI flag that prevents file output
-- [ ] Display processed content to stdout for preview
-- [ ] Show detailed information about transclusion operations performed
-- [ ] Report all files that would be read during processing
-- [ ] Validate all transclusion references without processing content
-- [ ] Generate summary statistics about the processing operation
-- [ ] Compatible with all existing flags and options
-- [ ] Provide clear indication that no files were modified
+- [x] Support `--dry-run` CLI flag that prevents file output
+- [x] Display processed content to stdout for preview
+- [x] Show detailed information about transclusion operations performed
+- [x] Report all files that would be read during processing
+- [x] Validate all transclusion references without processing content
+- [x] Generate summary statistics about the processing operation
+- [x] Compatible with all existing flags and options
+- [x] Provide clear indication that no files were modified
 
 ## Technical Design
 

@@ -180,6 +180,50 @@ describe('parserUtils', () => {
       });
     });
 
+    it('should find transclusion with heading range', () => {
+      const tokens = findTransclusionTokens('![[file#start:end]]');
+      
+      expect(tokens).toHaveLength(1);
+      expect(tokens[0]).toEqual({
+        type: 'transclusion',
+        value: '![[file#start:end]]',
+        startIndex: 0,
+        endIndex: 19,
+        path: 'file',
+        heading: 'start',
+        headingEnd: 'end'
+      });
+    });
+
+    it('should find transclusion with heading range to end', () => {
+      const tokens = findTransclusionTokens('![[file#start:]]');
+      
+      expect(tokens).toHaveLength(1);
+      expect(tokens[0]).toEqual({
+        type: 'transclusion',
+        value: '![[file#start:]]',
+        startIndex: 0,
+        endIndex: 16,
+        path: 'file',
+        heading: 'start',
+        headingEnd: ''
+      });
+    });
+
+    it('should find transclusion with heading range from beginning', () => {
+      const tokens = findTransclusionTokens('![[file#:end]]');
+      
+      expect(tokens).toHaveLength(1);
+      expect(tokens[0]).toEqual({
+        type: 'transclusion',
+        value: '![[file#:end]]',
+        startIndex: 0,
+        endIndex: 14,
+        path: 'file',
+        headingEnd: 'end'
+      });
+    });
+
     it('should find multiple transclusions', () => {
       const tokens = findTransclusionTokens('![[a]] and ![[b]]');
       
@@ -228,6 +272,40 @@ describe('parserUtils', () => {
       const ref = createReferenceFromToken(token);
       
       expect(ref?.heading).toBe('heading');
+    });
+
+    it('should include heading range if present', () => {
+      const token: Token = {
+        type: 'transclusion',
+        value: '![[file#start:end]]',
+        startIndex: 0,
+        endIndex: 19,
+        path: 'file',
+        heading: 'start',
+        headingEnd: 'end'
+      };
+      
+      const ref = createReferenceFromToken(token);
+      
+      expect(ref?.heading).toBe('start');
+      expect(ref?.headingEnd).toBe('end');
+    });
+
+    it('should handle empty headingEnd', () => {
+      const token: Token = {
+        type: 'transclusion',
+        value: '![[file#start:]]',
+        startIndex: 0,
+        endIndex: 16,
+        path: 'file',
+        heading: 'start',
+        headingEnd: ''
+      };
+      
+      const ref = createReferenceFromToken(token);
+      
+      expect(ref?.heading).toBe('start');
+      expect(ref?.headingEnd).toBe('');
     });
 
     it('should return null for non-transclusion tokens', () => {

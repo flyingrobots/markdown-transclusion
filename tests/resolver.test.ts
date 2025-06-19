@@ -108,12 +108,12 @@ describe('resolvePath', () => {
   });
 
   describe('security integration', () => {
-    it('should reject path traversal attempts', () => {
+    it('should reject path traversal attempts that escape base directory', () => {
       const result = resolvePath('../../../etc/passwd', { basePath: fixturesDir });
       
       expect(result.exists).toBe(false);
       expect(result.error).toBeDefined();
-      expect(result.errorCode).toBe(SecurityErrorCode.PATH_TRAVERSAL);
+      expect(result.errorCode).toBe(SecurityErrorCode.OUTSIDE_BASE);
       expect(result.absolutePath).toBe('');
     });
 
@@ -131,7 +131,7 @@ describe('resolvePath', () => {
       
       expect(result.exists).toBe(false);
       expect(result.error).toBeDefined();
-      expect(result.errorCode).toBe(SecurityErrorCode.PATH_TRAVERSAL);
+      expect(result.errorCode).toBe(SecurityErrorCode.OUTSIDE_BASE);
       expect(result.absolutePath).toBe('');
     });
 
@@ -232,7 +232,7 @@ describe('resolvePath', () => {
       });
       
       expect(result.exists).toBe(false);
-      expect(result.errorCode).toBe(SecurityErrorCode.PATH_TRAVERSAL);
+      expect(result.errorCode).toBe(SecurityErrorCode.OUTSIDE_BASE);
     });
   });
 });

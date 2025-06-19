@@ -12,6 +12,7 @@ export class TransclusionTransform extends Transform {
   private options: TransclusionOptions;
   private frontmatterState: 'none' | 'yaml-start' | 'toml-start' | 'yaml-inside' | 'toml-inside' | 'complete' = 'none';
   private lineNumber: number = 0;
+  private lastProcessedFiles: Set<string> = new Set();
 
   constructor(options: TransclusionOptions) {
     super({ readableObjectMode: false, writableObjectMode: false });
@@ -79,6 +80,15 @@ export class TransclusionTransform extends Transform {
     
     // Delegate all processing logic to LineTranscluder
     const processedLine = await this.lineTranscluder.processLine(line);
+    
+    // Emit file events for newly processed files
+    const currentProcessedFiles = new Set(this.lineTranscluder.getProcessedFiles());
+    for (const file of currentProcessedFiles) {
+      if (!this.lastProcessedFiles.has(file)) {
+        this.emit('file', file);
+      }
+    }
+    this.lastProcessedFiles = currentProcessedFiles;
     
     // Don't output anything in validate-only mode
     if (this.options.validateOnly) {

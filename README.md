@@ -118,6 +118,48 @@ markdown-transclusion input.md | pandoc -o output.pdf
 # ⚠️ On Windows, use Git Bash or PowerShell. CMD can't handle the pipework.
 ```
 
+### Output Control Modes
+
+Control output verbosity with Unix-style flags:
+
+```bash
+# Default: "Silence is golden" - only errors shown
+markdown-transclusion input.md > output.md
+
+# Verbose: Detailed human-readable progress
+markdown-transclusion input.md --verbose
+# [INFO] Starting transclusion processing
+# [INFO] Input: input.md
+# [INFO] Reading file: chapters/intro.md
+# [INFO] Processing complete
+# [INFO] Files processed: 2
+# [INFO] Transclusions resolved: 1
+
+# Porcelain: Machine-readable output for scripts
+markdown-transclusion input.md --porcelain
+# READ	chapters/intro.md
+# COMPLETE	2	1	0	0	125
+
+# Progress: Real-time progress bars
+markdown-transclusion large-doc.md --progress
+# Processing large-doc.md...
+# [████████████░░░░░░░░] 66% Processing: chapter-15.md
+# ✓ Processing complete: 20 files, 18 transclusions (1250ms)
+```
+
+Output follows Unix conventions:
+- Content → stdout
+- Metadata/Progress → stderr
+
+This enables proper piping:
+```bash
+# See progress while piping content
+markdown-transclusion doc.md --progress | pandoc -o output.pdf
+
+# Save both content and logs
+markdown-transclusion doc.md --verbose > content.md 2> process.log
+```
+
 ### Example
 
 Given these files:

@@ -47,6 +47,61 @@ describe('CLI Argument Parsing', () => {
       }
     });
     
+    it('should parse output control flags', () => {
+      // Test verbose flag
+      let result = parseCliArgs(['node', 'cli.js', '--verbose']);
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        expect(result.value.verbose).toBe(true);
+        expect(result.value.porcelain).toBeUndefined();
+        expect(result.value.progress).toBeUndefined();
+      }
+      
+      // Test porcelain flag
+      result = parseCliArgs(['node', 'cli.js', '--porcelain']);
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        expect(result.value.porcelain).toBe(true);
+        expect(result.value.verbose).toBeUndefined();
+        expect(result.value.progress).toBeUndefined();
+      }
+      
+      // Test progress flag
+      result = parseCliArgs(['node', 'cli.js', '--progress']);
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        expect(result.value.progress).toBe(true);
+        expect(result.value.verbose).toBeUndefined();
+        expect(result.value.porcelain).toBeUndefined();
+      }
+    });
+    
+    it('should reject conflicting output mode flags', () => {
+      // Test verbose + porcelain
+      let result = parseCliArgs(['node', 'cli.js', '--verbose', '--porcelain']);
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.error.code).toBe(CliArgsErrorCode.CONFLICTING_FLAGS);
+        expect(result.error.message).toContain('Cannot use multiple output modes');
+      }
+      
+      // Test verbose + progress
+      result = parseCliArgs(['node', 'cli.js', '--verbose', '--progress']);
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.error.code).toBe(CliArgsErrorCode.CONFLICTING_FLAGS);
+        expect(result.error.message).toContain('Cannot use multiple output modes');
+      }
+      
+      // Test all three
+      result = parseCliArgs(['node', 'cli.js', '--verbose', '--porcelain', '--progress']);
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.error.code).toBe(CliArgsErrorCode.CONFLICTING_FLAGS);
+        expect(result.error.message).toContain('Cannot use multiple output modes');
+      }
+    });
+    
     it('should parse combined short flags', () => {
       const result = parseCliArgs(['node', 'cli.js', '-hs']);
       
@@ -262,6 +317,9 @@ describe('CLI Argument Parsing', () => {
       expect(help).toContain('--version');
       expect(help).toContain('--output');
       expect(help).toContain('--base-path');
+      expect(help).toContain('--verbose');
+      expect(help).toContain('--porcelain');
+      expect(help).toContain('--progress');
       expect(help).toContain('--extensions');
       expect(help).toContain('--max-depth');
       expect(help).toContain('--variables');
@@ -269,6 +327,16 @@ describe('CLI Argument Parsing', () => {
       expect(help).toContain('--validate-only');
       expect(help).toContain('--strip-frontmatter');
       expect(help).toContain('--log-level');
+    });
+    
+    it('should include output modes section', () => {
+      const help = getHelpText();
+      expect(help).toContain('OUTPUT MODES:');
+      expect(help).toContain('Default mode follows Unix "silence is golden" principle');
+      expect(help).toContain('--verbose shows detailed processing information to stderr');
+      expect(help).toContain('--porcelain outputs machine-readable format to stderr');
+      expect(help).toContain('--progress displays real-time progress bars to stderr');
+      expect(help).toContain('Content always goes to stdout, metadata/progress to stderr');
     });
   });
   

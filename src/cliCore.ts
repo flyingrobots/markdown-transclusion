@@ -5,7 +5,10 @@ import { Writable } from 'stream';
 import { TransclusionTransform } from './stream';
 import { parseCliArgs, getHelpText, getVersionText } from './utils/cliArgs';
 import { StreamLogger, LogLevel } from './utils/logger';
-import type { TransclusionOptions } from './types';
+import { OutputMode, type OutputFormatter, type ProcessingStats } from './utils/outputFormatter';
+import { createFormatter } from './utils/enhancedOutputFormatter';
+import { createPluginExecutor } from './plugins';
+import type { TransclusionOptions, TransclusionError } from './types';
 
 export interface CliOptions {
   argv: string[];
@@ -58,27 +61,84 @@ export async function runCli(options: CliOptions): Promise<void> {
     return;
   }
   
+  // Determine output mode
+  let outputMode = OutputMode.DEFAULT;
+  if (args.verbose) {
+    outputMode = OutputMode.VERBOSE;
+  } else if (args.porcelain) {
+    outputMode = OutputMode.PORCELAIN;
+  } else if (args.progress) {
+    outputMode = OutputMode.PROGRESS;
+  }
+  
   // Create logger with proper streams for POSIX compliance
+  // In default mode, use ERROR level for minimal output
+  const logLevel = args.logLevel !== undefined 
+    ? args.logLevel 
+    : (outputMode === OutputMode.DEFAULT ? LogLevel.ERROR : LogLevel.INFO);
+    
   const logger = new StreamLogger(
     stderr,
     stdout,
-    args.logLevel !== undefined ? args.logLevel : LogLevel.INFO
+    logLevel
   );
   
+  // Initialize plugin system variable outside try block for cleanup access
+  let pluginExecutor: any = null;
+  
   try {
+    const startTime = Date.now();
     // Build transclusion options
+    // When processing a file and no base path is specified, use the file's directory
+    const resolvedInputPath = args.input ? resolve(args.input) : undefined;
+    const defaultBasePath = resolvedInputPath 
+      ? resolve(resolvedInputPath, '..')  // Parent directory of input file
+      : process.cwd();
+    
     const transclusionOptions: TransclusionOptions = {
-      basePath: args.basePath || process.cwd(),
+      basePath: args.basePath || defaultBasePath,
       extensions: args.extensions || ['md', 'markdown'],
       variables: args.variables,
       strict: args.strict,
       maxDepth: args.maxDepth || 10,
       validateOnly: args.validateOnly,
-      stripFrontmatter: args.stripFrontmatter
+      stripFrontmatter: args.stripFrontmatter,
+      initialFilePath: resolvedInputPath
     };
+    
+    // Create output formatter with enhanced error support
+    const formatter = createFormatter(outputMode, stderr, true, transclusionOptions.basePath, stdout);
+    
+    // Initialize the enhanced formatter if it supports it
+    if ('init' in formatter && typeof formatter.init === 'function') {
+      await (formatter as any).init();
+    }
+    
+    // Initialize plugin system if plugins are specified
+    if (args.plugins && args.plugins.length > 0) {
+      try {
+        pluginExecutor = createPluginExecutor(logger, args.plugins, args.pluginConfig);
+        await pluginExecutor.initialize(transclusionOptions);
+        logger.info(`Initialized ${pluginExecutor.getAvailablePlugins().length} plugins`);
+      } catch (error) {
+        logger.error('Failed to initialize plugin system:', error);
+        if (transclusionOptions.strict) {
+          await gracefulExit(1, exit);
+          return;
+        }
+      }
+    }
     
     // Create transform stream
     const transform = new TransclusionTransform(transclusionOptions);
+    
+    // Notify processing start
+    formatter.onProcessingStart(resolvedInputPath);
+    
+    // Track stats
+    let warningCount = 0;
+    let fileCount = 0;
+    const processedFilesSet = new Set<string>();
     
     // Set up input stream
     const input = args.input
@@ -103,26 +163,72 @@ export async function runCli(options: CliOptions): Promise<void> {
         : stdout;
     }
     
+    // Listen for file processing events
+    transform.on('file', (filePath: string) => {
+      formatter.onFileRead(filePath);
+      processedFilesSet.add(filePath);
+      fileCount++;
+      
+      // Update progress if in progress mode
+      if (outputMode === OutputMode.PROGRESS) {
+        formatter.updateProgress(fileCount, fileCount + 1, `Processing: ${filePath}`);
+      }
+    });
+    
     // Handle transform errors
-    transform.on('error', (error) => {
-      logger.error('Transclusion error', error);
+    transform.on('error', (error: Error | TransclusionError) => {
+      // Convert general errors to TransclusionError format
+      const transclusionError: TransclusionError = 'path' in error 
+        ? error 
+        : {
+            message: error.message || String(error),
+            path: 'unknown',
+            line: undefined,
+            code: 'code' in error && typeof error.code === 'string' ? error.code : 'UNKNOWN_ERROR'
+          };
+      formatter.onError(transclusionError);
+      if (!transclusionOptions.strict) {
+        warningCount++;
+      }
       if (transclusionOptions.strict) {
         gracefulExit(1, exit).catch(console.error);
       }
     });
     
+    // Handle warnings
+    transform.on('warning', (message: string) => {
+      formatter.onWarning(message);
+      warningCount++;
+    });
+    
     // Process the stream
     await pipeline(input, transform, output);
     
+    // Calculate final stats
+    const duration = Date.now() - startTime;
+    const stats: ProcessingStats = {
+      filesProcessed: processedFilesSet.size + (args.input ? 1 : 0),
+      transclusionsResolved: processedFilesSet.size,
+      warnings: warningCount,
+      errors: transform.errors.length,
+      duration
+    };
+    
     // Check for errors after processing
     const errors = transform.errors;
-    if (errors.length > 0) {
+    if (errors.length > 0 && outputMode !== OutputMode.DEFAULT) {
+      // In non-default modes, errors are already reported via formatter
+      if (transclusionOptions.strict) {
+        await gracefulExit(1, exit);
+        return;
+      }
+    } else if (errors.length > 0 && outputMode === OutputMode.DEFAULT) {
+      // In default mode, only show errors
       for (const error of errors) {
-        logger.warn(`[${error.path}${error.line ? `:${error.line}` : ''}] ${error.message}`);
+        formatter.onError(error);
       }
       
       if (transclusionOptions.strict) {
-        logger.error(`Processing failed with ${errors.length} error(s)`);
         await gracefulExit(1, exit);
         return;
       }
@@ -134,57 +240,91 @@ export async function runCli(options: CliOptions): Promise<void> {
       const processedFiles = transform.processedFiles || [];
       const transclusionCount = processedFiles.length;
       
-      // Show dry run header
-      stdout.write('🔍 DRY RUN MODE - No files will be modified\n\n');
-      
-      if (args.input) {
-        stdout.write(`Processing: ${args.input}\n`);
+      // For dry run, always use stdout regardless of output mode
+      if (outputMode === OutputMode.PORCELAIN) {
+        // Porcelain dry run output
+        stdout.write(`DRY_RUN\tSTART\n`);
+        stdout.write(`DRY_RUN\tINPUT\t${args.input || 'stdin'}\n`);
+        for (const file of processedFiles) {
+          stdout.write(`DRY_RUN\tREAD\t${file}\n`);
+        }
+        stdout.write(`DRY_RUN\tSTATS\t${processedFiles.length + 1}\t${transclusionCount}\t0\t${errors.length}\n`);
+        stdout.write(`DRY_RUN\tCONTENT_START\n`);
+        stdout.write(processedContent);
+        stdout.write(`\nDRY_RUN\tCONTENT_END\n`);
+        stdout.write(`DRY_RUN\tCOMPLETE\t${errors.length === 0 ? 'SUCCESS' : 'ERRORS'}\n`);
       } else {
-        stdout.write('Processing: stdin\n');
-      }
-      
-      // Show processed files
-      for (const file of processedFiles) {
-        stdout.write(`├── Reading: ${file}\n`);
-      }
-      
-      if (processedFiles.length === 0) {
-        stdout.write('└── No transclusions found\n');
-      }
-      
-      stdout.write('\n=== PROCESSED CONTENT ===\n');
-      stdout.write(processedContent);
-      stdout.write('\n=== SUMMARY ===\n');
-      stdout.write(`📄 Files processed: ${processedFiles.length + 1}\n`);
-      stdout.write(`🔗 Transclusions resolved: ${transclusionCount}\n`);
-      stdout.write(`⚠️  Warnings: 0\n`);
-      stdout.write(`❌ Errors: ${errors.length}\n`);
-      
-      if (errors.length > 0) {
-        stdout.write('\n⚠️  Dry run completed with errors\n');
-        stdout.write('   Fix issues before actual processing\n');
-      } else {
-        stdout.write('\n✓ Dry run completed successfully\n');
-        if (args.input && args.output) {
-          stdout.write(`  Ready for actual processing with: markdown-transclusion ${args.input} --output ${args.output}\n`);
-        } else if (args.input) {
-          stdout.write(`  Ready for actual processing with: markdown-transclusion ${args.input}\n`);
+        // Human-readable dry run output
+        stdout.write('🔍 DRY RUN MODE - No files will be modified\n\n');
+        
+        if (args.input) {
+          stdout.write(`Processing: ${args.input}\n`);
         } else {
-          stdout.write('  Ready for actual processing\n');
+          stdout.write('Processing: stdin\n');
+        }
+        
+        // Show processed files
+        for (const file of processedFiles) {
+          stdout.write(`├── Reading: ${file}\n`);
+        }
+        
+        if (processedFiles.length === 0) {
+          stdout.write('└── No transclusions found\n');
+        }
+        
+        stdout.write('\n=== PROCESSED CONTENT ===\n');
+        stdout.write(processedContent);
+        stdout.write('\n=== SUMMARY ===\n');
+        stdout.write(`📄 Files processed: ${processedFiles.length + 1}\n`);
+        stdout.write(`🔗 Transclusions resolved: ${transclusionCount}\n`);
+        stdout.write(`⚠️  Warnings: ${warningCount}\n`);
+        stdout.write(`❌ Errors: ${errors.length}\n`);
+        
+        if (errors.length > 0) {
+          stdout.write('\n⚠️  Dry run completed with errors\n');
+          stdout.write('   Fix issues before actual processing\n');
+        } else {
+          stdout.write('\n✓ Dry run completed successfully\n');
+          if (args.input && args.output) {
+            stdout.write(`  Ready for actual processing with: markdown-transclusion ${args.input} --output ${args.output}\n`);
+          } else if (args.input) {
+            stdout.write(`  Ready for actual processing with: markdown-transclusion ${args.input}\n`);
+          } else {
+            stdout.write('  Ready for actual processing\n');
+          }
         }
       }
     }
     // Validation mode feedback
     else if (args.validateOnly) {
-      if (errors.length > 0) {
-        logger.info(`Validation completed with ${errors.length} issue(s)`);
-      } else {
-        logger.info('Validation completed successfully');
+      formatter.onValidationComplete(errors);
+    }
+    // Normal processing complete
+    else if (!args.dryRun) {
+      formatter.onProcessingComplete(stats);
+    }
+    
+    // Cleanup plugin system
+    if (pluginExecutor) {
+      try {
+        await pluginExecutor.cleanup();
+      } catch (error) {
+        logger.warn('Error during plugin cleanup:', error);
       }
     }
     
   } catch (error) {
     logger.error('Fatal error', error);
+    
+    // Cleanup plugin system on error
+    if (pluginExecutor) {
+      try {
+        await pluginExecutor.cleanup();
+      } catch (cleanupError) {
+        logger.warn('Error during plugin cleanup:', cleanupError);
+      }
+    }
+    
     await gracefulExit(1, exit);
   }
 }

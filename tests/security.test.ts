@@ -40,37 +40,18 @@ describe('validatePath', () => {
   });
 
   describe('path traversal attempts', () => {
-    it('should reject paths starting with ..', () => {
-      expectSecurityError(() => validatePath('../file.md'), SecurityErrorCode.PATH_TRAVERSAL);
-      expectSecurityError(() => validatePath('../../file.md'), SecurityErrorCode.PATH_TRAVERSAL);
-      expectSecurityError(() => validatePath('../../../etc/passwd'), SecurityErrorCode.PATH_TRAVERSAL);
+    it('should now accept paths with .. (security check happens later)', () => {
+      expect(validatePath('../file.md')).toBe(true);
+      expect(validatePath('../../file.md')).toBe(true);
+      expect(validatePath('../../../etc/passwd')).toBe(true);
+      expect(validatePath('path/../../../etc/passwd')).toBe(true);
+      expect(validatePath('some/path/../../../secret')).toBe(true);
+      expect(validatePath('..\\file.md')).toBe(true);
+      expect(validatePath('path\\..\\..\\file.md')).toBe(true);
     });
 
-    it('should reject paths with .. in the middle', () => {
-      expectSecurityError(() => validatePath('path/../../../etc/passwd'), SecurityErrorCode.PATH_TRAVERSAL);
-      expectSecurityError(() => validatePath('some/path/../../../secret'), SecurityErrorCode.PATH_TRAVERSAL);
-    });
-
-    it('should reject paths with backslash traversal', () => {
-      expectSecurityError(() => validatePath('..\\file.md'), SecurityErrorCode.PATH_TRAVERSAL);
-      expectSecurityError(() => validatePath('path\\..\\..\\file.md'), SecurityErrorCode.PATH_TRAVERSAL);
-    });
-
-    it('should reject URL-encoded traversal attempts', () => {
-      expectSecurityError(() => validatePath('%2e%2e%2ffile.md'), SecurityErrorCode.PATH_TRAVERSAL);
-      expectSecurityError(() => validatePath('%2e%2e/file.md'), SecurityErrorCode.PATH_TRAVERSAL);
-      expectSecurityError(() => validatePath('..%2ffile.md'), SecurityErrorCode.PATH_TRAVERSAL);
-      expectSecurityError(() => validatePath('%2e%2e%5cfile.md'), SecurityErrorCode.PATH_TRAVERSAL);
-    });
-
-    it('should reject double-encoded traversal attempts', () => {
-      expectSecurityError(() => validatePath('%252e%252e%252ffile.md'), SecurityErrorCode.PATH_TRAVERSAL);
-      expectSecurityError(() => validatePath('%252e%252e%255cfile.md'), SecurityErrorCode.PATH_TRAVERSAL);
-    });
-
-    it('should reject mixed case encoded attempts', () => {
-      expectSecurityError(() => validatePath('%2E%2E%2Ffile.md'), SecurityErrorCode.PATH_TRAVERSAL);
-      expectSecurityError(() => validatePath('%2e%2E/file.md'), SecurityErrorCode.PATH_TRAVERSAL);
+    it('should still allow paths that normalize safely', () => {
+      expect(validatePath('path/subpath/../file.md')).toBe(true);
     });
   });
 

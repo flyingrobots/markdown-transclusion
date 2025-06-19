@@ -75,37 +75,23 @@ export function validatePath(filePath: string): boolean {
   const normalized = path.normalize(filePath);
 
   // Check for path traversal attempts
-  // After normalization, any remaining .. at the start means traversal
-  if (normalized.startsWith('..')) {
-    throw new SecurityError(SecurityErrorCode.PATH_TRAVERSAL);
-  }
-
-  // Check for path traversal in the middle (shouldn't happen after normalize, but be safe)
-  if (normalized.includes('../') || normalized.includes('..\\')) {
-    throw new SecurityError(SecurityErrorCode.PATH_TRAVERSAL);
-  }
+  // Note: We allow relative paths with .. because they will be resolved
+  // relative to a parent file or base path, and then checked for containment.
+  // We still block encoded variants and other suspicious patterns below.
 
   // Check for URL-encoded path traversal attempts
   const decoded = decodeURIComponent(filePath);
   if (decoded !== filePath) {
-    // If decoding changed the path, check it too
-    if (decoded.includes('..') || path.isAbsolute(decoded)) {
+    // If decoding changed the path, check for absolute paths
+    if (path.isAbsolute(decoded)) {
       throw new SecurityError(SecurityErrorCode.PATH_TRAVERSAL);
     }
   }
 
   // Additional checks for encoded variants
-  const encodedVariants = [
-    '%2e%2e%2f', '%2e%2e/', '..%2f', '%2e%2e%5c', '..%5c',
-    '%252e%252e%252f', '%252e%252e%255c'
-  ];
-  
-  const lowerPath = filePath.toLowerCase();
-  for (const variant of encodedVariants) {
-    if (lowerPath.includes(variant)) {
-      throw new SecurityError(SecurityErrorCode.PATH_TRAVERSAL);
-    }
-  }
+  // Note: Since we now allow .. in paths (they will be validated after resolution),
+  // we should not block encoded variants of .. either.
+  // The final security check happens in isWithinBasePath after full path resolution.
 
   return true;
 }

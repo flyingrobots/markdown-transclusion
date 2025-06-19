@@ -46,13 +46,9 @@ describe('pathResolution utilities', () => {
       expect(result.ok).toBe(true);
     });
 
-    it('should reject paths with ..', () => {
+    it('should now accept paths with .. (security check happens later)', () => {
       const result = validateReferencePath('../escape');
-      expect(result.ok).toBe(false);
-      if (!result.ok) {
-        expect(result.error.code).toBe('INVALID_PATH');
-        expect(result.error.errorCode).toBe(SecurityErrorCode.PATH_TRAVERSAL);
-      }
+      expect(result.ok).toBe(true);
     });
 
     it('should reject absolute paths', () => {
