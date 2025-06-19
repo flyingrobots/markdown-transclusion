@@ -1,4 +1,53 @@
-# 1.0.0 (2025-05-29)
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+
+### Added
+- **Plugin System Architecture** - Comprehensive plugin system following SOLID principles
+  - Plugin loader with file/directory support and validation
+  - Plugin registry with lifecycle management and priority-based execution
+  - Built-in plugins: CodeHighlighter, MacroExpander, TableFormatter
+  - CLI integration with `--plugins` and `--plugin-config` flags
+  - Full TypeScript support with dependency injection
+- **Enhanced Error Recovery** - Intelligent error suggestions with fuzzy matching
+  - Levenshtein distance algorithm for file/heading/variable suggestions
+  - Context-aware error messages with confidence percentages
+  - Actionable fix recommendations and "did you mean?" prompts
+  - Integration with existing error handling while maintaining compatibility
+- **Heading Range Extraction** - Advanced transclusion syntax
+  - Support for `![[file#start:end]]` syntax to include content between headings
+  - Enables precise content selection from large documents
+- **CLI Output Control** - Unix-style output modes for different use cases
+  - `--verbose` flag for detailed human-readable progress output
+  - `--porcelain` flag for machine-readable output suitable for scripting
+  - `--progress` flag for real-time progress bars during processing
+  - Unix philosophy compliance with "silence is golden" default behavior
+- **Docker Development Environment** - Containerized development workflow
+  - Complete Docker setup for consistent development environment
+  - Docker Compose services for development, testing, and building
+  - Helper scripts for common Docker operations
+
+### Changed
+- **Feature Organization** - Moved completed features to `docs/features/completed/`
+  - Consolidated all completed feature specifications in single directory
+  - Consistent naming convention for feature documentation
+- **Documentation** - Updated README.md with comprehensive feature coverage
+  - Enhanced transclusion syntax documentation with new features
+  - Plugin system usage examples and development guide
+  - CLI options documentation with all new flags
+
+### Technical
+- All new features follow SOLID principles (SRP, DI, KISS, YAGNI)
+- Comprehensive E2E test coverage for all new functionality
+- Type-safe plugin development with full TypeScript support
+- Error isolation and graceful fallback for plugin failures
+
+## [1.0.0] - 2025-05-29
 
 
 ### Bug Fixes
