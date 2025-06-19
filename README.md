@@ -71,12 +71,15 @@ Designed for the Universal Charter project's multilingual documentation pipeline
 ✅ **Recursive transclusion** - Include files within files with automatic depth limiting  
 ✅ **Circular reference detection** - Prevents infinite loops with clear error reporting
 ✅ **Heading extraction** - Include specific sections using `![[file#heading]]` syntax  
+✅ **Heading range extraction** - Include ranges using `![[file#start:end]]` syntax  
 ✅ **Variable substitution** - Dynamic file references with `{{variable}}` placeholders  
 ✅ **Stream processing** - Memory-efficient processing of large documents  
 ✅ **Path resolution** - Relative paths resolved from parent file context  
 ✅ **Security built-in** - Path traversal protection and base directory enforcement  
 ✅ **CLI & API** - Use as a command-line tool or Node.js library  
 ✅ **Error recovery** - Graceful handling of missing files with inline error comments  
+✅ **Enhanced error recovery** - Intelligent suggestions with fuzzy matching and "did you mean?" prompts  
+✅ **Plugin system** - Extensible architecture for custom content transformations  
 ✅ **Zero dependencies** - No runtime dependencies for security and simplicity
 
 ## Installation
@@ -112,10 +115,52 @@ markdown-transclusion docs/index.md --validate-only --strict
 # Use from a different directory
 markdown-transclusion README.md --base-path ./docs
 
+# Use plugins for custom transformations
+markdown-transclusion input.md --plugins ./plugins/
+
 # Pipe to other tools
 markdown-transclusion input.md | pandoc -o output.pdf
 
 # ⚠️ On Windows, use Git Bash or PowerShell. CMD can't handle the pipework.
+```
+
+### Plugin System
+
+Extend functionality with custom plugins:
+
+```bash
+# Load plugins from files
+markdown-transclusion input.md --plugins ./my-plugin.js,./another-plugin.js
+
+# Load plugins from directory
+markdown-transclusion input.md --plugins ./plugins/
+
+# Plugin configuration
+markdown-transclusion input.md --plugins ./plugins/ --plugin-config ./plugin-config.json
+
+# Built-in plugins (syntax highlighting, table formatting, macro expansion)
+markdown-transclusion input.md --plugins builtin
+```
+
+Create custom plugins:
+
+```javascript
+// my-plugin.js
+module.exports = {
+  metadata: {
+    name: 'my-transformer',
+    version: '1.0.0',
+    description: 'Custom content transformation',
+    type: 'content-transformer',
+    priority: 50,
+    async: false
+  },
+  
+  transform(content, context) {
+    // Transform content during transclusion
+    return content.replace(/\[TIMESTAMP\]/g, new Date().toISOString());
+  }
+};
 ```
 
 ### Output Control Modes
@@ -239,6 +284,7 @@ if (stream.errors.length > 0) {
 | `![[filename]]` | Include entire file | Contents of `filename.md` |
 | `![[folder/file]]` | Include file from folder | Contents of `folder/file.md` |
 | `![[file#heading]]` | Include specific section | Content under `# heading` until next heading |
+| `![[file#start:end]]` | Include heading range | Content from `# start` to `# end` |
 | `![[file#What We Don't Talk About]]` | Include section with spaces | Content under heading with spaces |
 | `![[file-{{var}}]]` | Variable substitution | With `var=en`: contents of `file-en.md` |
 
@@ -254,9 +300,17 @@ if (stream.errors.length > 0) {
 <!-- Heading with spaces -->
 ![[architecture#System Overview]]
 
-<!-- Error handling - missing file -->
-![[missing-file]]
-<!-- Error: File not found: missing-file -->
+<!-- Heading ranges -->
+![[tutorial#Getting Started:Advanced Usage]]  <!-- Include from "Getting Started" to "Advanced Usage" -->
+
+<!-- Error handling with intelligent suggestions -->
+![[installaton.md]]
+<!-- Error: File not found: installaton.md
+🔍 Suggestions:
+   • installation.md (93% match) ← Did you mean this?
+💡 How to fix:
+   • Check file path spelling
+   • Replace with: installation.md -->
 
 <!-- Circular reference protection -->
 <!-- If A includes B, and B includes A, it will show: -->
@@ -496,6 +550,11 @@ Key options:
 - `--validate-only` - Check references without output
 - `--strip-frontmatter` - Remove YAML/TOML frontmatter from files
 - `--log-level` - Set verbosity (ERROR/WARN/INFO/DEBUG)
+- `--plugins` - Load custom plugins from files/directories
+- `--plugin-config` - Plugin configuration file
+- `--verbose` - Detailed human-readable progress output
+- `--porcelain` - Machine-readable output for scripting
+- `--progress` - Real-time progress bars
 
 ## Security
 
