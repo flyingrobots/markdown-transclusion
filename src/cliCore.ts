@@ -103,7 +103,8 @@ export async function runCli(options: CliOptions): Promise<void> {
       maxDepth: args.maxDepth || 10,
       validateOnly: args.validateOnly,
       stripFrontmatter: args.stripFrontmatter,
-      initialFilePath: resolvedInputPath
+      initialFilePath: resolvedInputPath,
+      templateVariables: args.templateVariables
     };
     
     // Create output formatter with enhanced error support
