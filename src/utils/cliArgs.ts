@@ -23,6 +23,7 @@ export interface CliArgs {
   progress?: boolean;
   plugins?: string[];
   pluginConfig?: string;
+  templateVariables?: Record<string, string>;
 }
 
 /**
@@ -293,6 +294,28 @@ function parseLongFlag(
       nextIndex++;
       break;
     }
+    
+    case 'template-variables':
+    case 'template-vars': {
+      if (nextIndex >= args.length || args[nextIndex].startsWith('-')) {
+        return Err({
+          code: CliArgsErrorCode.MISSING_VALUE,
+          message: `Flag --${flagName} requires a value`,
+          flag: `--${flagName}`
+        });
+      }
+      const varsResult = parseVariables(args[nextIndex]);
+      if (!varsResult.ok) {
+        return Err({
+          code: CliArgsErrorCode.INVALID_VALUE,
+          message: `Invalid template variables format: ${varsResult.error}`,
+          flag: `--${flagName}`
+        });
+      }
+      result.templateVariables = varsResult.value;
+      nextIndex++;
+      break;
+    }
       
     default:
       return Err({
@@ -447,6 +470,9 @@ OPTIONS:
                           (default: 10, prevents infinite loops)
   --variables VARS        Variables for {{var}} substitution in filenames
                           Format: key1=value1,key2=value2
+  --template-variables    Template variables for {{var}} substitution in content
+    VARS                  Format: key1=value1,key2=value2
+                          Special values: @date, @time, @timestamp for dynamic values
   -s, --strict            Exit with error code 1 on any transclusion failure
                           (default: insert error comment and continue)
   --validate-only         Check all references without outputting content
@@ -476,6 +502,12 @@ TRANSCLUSION SYNTAX:
   ![[filename#heading]]   Include specific heading section
   ![[dir/file]]          Include file from subdirectory
   ![[file-{{var}}]]      Include file with variable substitution
+  
+TEMPLATE VARIABLES:
+  {{variable}}            Replaced with value from --template-variables
+  {{date}}                Current date (if date is defined)
+  {{time}}                Current time (if time is defined)
+  {{author}}              Author name (if author is defined)
 
 EXAMPLES:
   # Process a single file
@@ -486,6 +518,9 @@ EXAMPLES:
 
   # Process with variables for multilingual docs
   markdown-transclusion template.md --variables lang=es,version=2.0
+  
+  # Process with template variables for content substitution
+  markdown-transclusion template.md --template-variables "title=My Report,author=John Doe,date=2025-07-04"
 
   # Validate all references in documentation
   markdown-transclusion docs/index.md --validate-only --strict
@@ -532,5 +567,5 @@ For more information, see: https://github.com/flyingrobots/markdown-transclusion
  * Get version text
  */
 export function getVersionText(): string {
-  return 'markdown-transclusion version 1.0.0';
+  return 'markdown-transclusion version 1.1.2';
 }
