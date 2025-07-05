@@ -129,8 +129,8 @@ export async function runCli(options: CliOptions): Promise<void> {
       }
     }
     
-    // Create transform stream
-    const transform = new TransclusionTransform(transclusionOptions);
+    // Create transform stream with plugin executor
+    const transform = new TransclusionTransform(transclusionOptions, pluginExecutor);
     
     // Notify processing start
     formatter.onProcessingStart(resolvedInputPath);
@@ -149,8 +149,8 @@ export async function runCli(options: CliOptions): Promise<void> {
     let output: NodeJS.WritableStream;
     let dryRunBuffer: Buffer[] = [];
     
-    if (args.dryRun) {
-      // In dry run mode, collect output in buffer
+    if (args.dryRun || (pluginExecutor && !args.validateOnly)) {
+      // In dry run mode or when we have post-processors, collect output in buffer
       output = new Writable({
         write(chunk: Buffer, encoding, callback) {
           dryRunBuffer.push(chunk);
@@ -234,9 +234,33 @@ export async function runCli(options: CliOptions): Promise<void> {
       }
     }
     
+    // Apply post-processors if we have content and plugin executor
+    let processedContent: string | undefined;
+    if ((args.dryRun || pluginExecutor) && dryRunBuffer.length > 0) {
+      processedContent = Buffer.concat(dryRunBuffer).toString();
+      
+      if (pluginExecutor && !args.validateOnly) {
+        try {
+          const { content: postProcessedContent } = await pluginExecutor.postProcessContent(
+            processedContent,
+            transclusionOptions,
+            args.output,
+            stats,
+            args.dryRun || false
+          );
+          processedContent = postProcessedContent;
+        } catch (error) {
+          logger.error('Post-processing error:', error);
+          if (transclusionOptions.strict) {
+            await gracefulExit(1, exit);
+            return;
+          }
+        }
+      }
+    }
+    
     // Dry run mode output
-    if (args.dryRun) {
-      const processedContent = Buffer.concat(dryRunBuffer).toString();
+    if (args.dryRun && processedContent !== undefined) {
       const processedFiles = transform.processedFiles || [];
       const transclusionCount = processedFiles.length;
       
@@ -301,6 +325,24 @@ export async function runCli(options: CliOptions): Promise<void> {
     }
     // Normal processing complete
     else if (!args.dryRun) {
+      // If we buffered content for post-processing, write it out now
+      if (pluginExecutor && processedContent !== undefined) {
+        const finalOutput = args.output
+          ? createWriteStream(resolve(args.output))
+          : stdout;
+        
+        await new Promise<void>((resolve, reject) => {
+          finalOutput.write(processedContent, (err) => {
+            if (err) reject(err);
+            else resolve();
+          });
+        });
+        
+        if (finalOutput !== stdout) {
+          finalOutput.end();
+        }
+      }
+      
       formatter.onProcessingComplete(stats);
     }
     

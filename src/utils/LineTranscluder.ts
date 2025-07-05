@@ -11,6 +11,7 @@ import type {
   FileCache
 } from '../types';
 import { stripFrontmatter } from './contentProcessing';
+import type { PluginExecutor } from '../plugins/core/PluginExecutor';
 
 /**
  * Handles the business logic of line transclusion
@@ -24,18 +25,47 @@ export class LineTranscluder {
   private visitedFiles = new Set<string>();
   private currentDepth = 0;
   private maxDepth: number;
+  private pluginExecutor?: PluginExecutor;
   
-  constructor(options: TransclusionOptions) {
+  constructor(options: TransclusionOptions, pluginExecutor?: PluginExecutor) {
     this.options = options;
     this.cache = options.cache;
     this.maxDepth = options.maxDepth || 10;
+    this.pluginExecutor = pluginExecutor;
   }
   
   /**
    * Process a single line, handling transclusions
    */
   async processLine(line: string): Promise<string> {
-    return this.processLineWithDepth(line, 0, new Set<string>(), this.options.initialFilePath);
+    const processedLine = await this.processLineWithDepth(line, 0, new Set<string>(), this.options.initialFilePath);
+    
+    // Apply content transformers to the main file lines if plugin executor is available
+    if (this.pluginExecutor && this.options.initialFilePath) {
+      try {
+        const { content: transformedLine } = await this.pluginExecutor.transformContent(
+          processedLine,
+          this.options.initialFilePath,
+          this.options,
+          undefined, // lineNumber
+          line, // original syntax
+          0, // depth
+          [] // pathStack
+        );
+        return transformedLine;
+      } catch (error) {
+        // Log plugin errors but continue processing
+        const pluginError: TransclusionError = {
+          message: `Plugin error transforming main content: ${error}`,
+          path: this.options.initialFilePath,
+          code: 'PLUGIN_ERROR'
+        };
+        this.errors.push(pluginError);
+        return processedLine;
+      }
+    }
+    
+    return processedLine;
   }
   
   /**
@@ -73,6 +103,31 @@ export class LineTranscluder {
     // Use readResolvedRefs for consistency and to avoid duplication
     let processedRefs = await readResolvedRefs(resolvedRefs, this.options);
     
+    // Apply file processors if plugin executor is available
+    if (this.pluginExecutor) {
+      for (let i = 0; i < processedRefs.length; i++) {
+        const processed = processedRefs[i];
+        if (processed.content && processed.resolved.exists) {
+          try {
+            const { content: transformedContent } = await this.pluginExecutor.processFile(
+              processed.content,
+              processed.resolved.absolutePath,
+              this.options
+            );
+            processedRefs[i] = { ...processed, content: transformedContent };
+          } catch (error) {
+            // Log plugin errors but continue processing
+            const pluginError: TransclusionError = {
+              message: `Plugin error processing file: ${error}`,
+              path: processed.resolved.absolutePath,
+              code: 'PLUGIN_ERROR'
+            };
+            this.errors.push(pluginError);
+          }
+        }
+      }
+    }
+    
     // Now handle circular references and recursive processing
     const finalProcessedRefs: ProcessedReference[] = [];
     
@@ -107,12 +162,36 @@ export class LineTranscluder {
         newVisitedStack.add(resolved.absolutePath);
         
         // Recursively process the content
-        const recursiveContent = await this.processContentRecursively(
+        let recursiveContent = await this.processContentRecursively(
           processedContent,
           depth + 1,
           newVisitedStack,
           resolved.absolutePath
         );
+        
+        // Apply content transformers if plugin executor is available
+        if (this.pluginExecutor) {
+          try {
+            const { content: transformedContent } = await this.pluginExecutor.transformContent(
+              recursiveContent,
+              resolved.absolutePath,
+              this.options,
+              undefined, // lineNumber - we don't have it here
+              ref.original, // original syntax
+              depth,
+              Array.from(newVisitedStack)
+            );
+            recursiveContent = transformedContent;
+          } catch (error) {
+            // Log plugin errors but continue processing
+            const pluginError: TransclusionError = {
+              message: `Plugin error transforming content: ${error}`,
+              path: resolved.absolutePath,
+              code: 'PLUGIN_ERROR'
+            };
+            this.errors.push(pluginError);
+          }
+        }
         
         finalProcessedRefs.push({
           ref,

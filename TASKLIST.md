@@ -1,9 +1,11 @@
 # 🚀 Next Moves Task List
 
+> ⚠️ **MAJOR PIVOT IN PROGRESS**: We are removing the plugin system and refocusing on being a best-in-class transclusion tool. See [REORG_TASKLIST.md](./REORG_TASKLIST.md) for the reorganization plan and [docs/sitreps/2025-06-19-brutal-honesty.md](./docs/sitreps/2025-06-19-brutal-honesty.md) for rationale.
+
 ## 🎯 Feature Specifications to Create
 - [x] F020 - CLI Output Control → **MOVED TO** `docs/features/completed/`
 - [x] F021 - Heading Range Extraction → **MOVED TO** `docs/features/completed/`
-- [x] F022 - Plugin System for Custom Transformers → **MOVED TO** `docs/features/completed/`
+- [x] ~~F022 - Plugin System for Custom Transformers~~ → **REMOVED IN v2.0.0**
 - [x] F023 - VS Code Extension for Transclusion Preview
 - [x] F024 - Content Analytics & Dependency Graphs
 - [x] F025 - Enhanced Error Recovery → **MOVED TO** `docs/features/completed/`
@@ -23,8 +25,8 @@
 
 ### 🥈 **Priority 2: Developer Experience**
 - [x] Generate comprehensive documentation for all src/ modules (core modules complete)
-- [x] F022 - Design and implement plugin system architecture ✅ CORE COMPLETE
-- [ ] F023 - Create VS Code extension prototype
+- [x] ~~F022 - Design and implement plugin system architecture~~ ❌ REMOVED
+- [ ] F023 - Create VS Code extension prototype (using new API)
 
 ### 🥉 **Priority 3: Analytics & Tooling**
 - [ ] F024 - Implement content analytics and dependency graphs
@@ -39,25 +41,30 @@
 ## 📋 Completion Notes
 
 ### ✅ Recently Completed Features (2025-06-18/19)
-- **F020**: CLI Output Control - Unix-style flags (--verbose, --porcelain, --progress)
+- **F020**: CLI Output Control - Unix-style flags (simplifying in v2.0.0)
 - **F021**: Heading Range Extraction - Advanced ![[file#start:end]] syntax  
-- **F022**: Plugin System Architecture - Extensible SOLID-based plugin framework
+- ~~**F022**: Plugin System Architecture~~ - Built then removed (see SITREP)
 - **F025**: Enhanced Error Recovery - Fuzzy matching with intelligent suggestions
 
 ### 🎯 **Recommended Next Moves (Priority Order)**
 
-#### 🥇 **Immediate Priorities (High Impact, Ready to Implement)**
-1. **Stream Integration for Plugins** ⭐⭐⭐
-   - Integrate plugin execution into TransclusionTransform stream
-   - Enable actual content transformation through plugins
-   - **Impact**: Makes plugin system fully functional
-   - **Effort**: 2-3 hours (modify stream.ts)
+#### ⚠️ **OBSOLETE - Plugin System Being Removed**
+~~1. **Stream Integration for Plugins**~~ ❌ CANCELLED
+   - ~~Integrate plugin execution into TransclusionTransform stream~~
+   - Being removed in v2.0.0 reorganization
+
+#### 🥇 **New Immediate Priorities**
+1. **Core Architecture Cleanup** ⭐⭐⭐
+   - Implement clean separation: CLI/Stream/API
+   - Remove plugin system entirely
+   - **Impact**: Cleaner, faster, more maintainable
+   - **Effort**: 3 weeks (see REORG_TASKLIST.md)
 
 2. **F023 - VS Code Extension Prototype** ⭐⭐⭐
    - Live preview of transclusion resolution in VS Code
-   - Syntax highlighting for ![[]] references
+   - Use new Rich API (not plugins)
    - **Impact**: Developer experience game-changer
-   - **Effort**: 4-6 hours
+   - **Effort**: 4-6 hours (after v2.0.0)
 
 #### 🥈 **Medium Term (Expand Capabilities)**
 3. **F024 - Content Analytics & Dependency Graphs** ⭐⭐

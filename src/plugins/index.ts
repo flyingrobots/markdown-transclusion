@@ -86,10 +86,14 @@ export function createPluginExecutor(
 ) {
   const { PluginExecutor } = require('./core/PluginExecutor');
   
+  // Filter out 'builtin' from plugin sources since built-ins are handled separately
+  const externalSources = pluginSources.filter(source => source !== 'builtin');
+  const enableBuiltins = pluginSources.includes('builtin');
+  
   return new PluginExecutor(logger, {
-    pluginSources,
+    pluginSources: externalSources,
     configPath,
-    enableBuiltins: true,
+    enableBuiltins,
     operationTimeout: 5000
   });
 }

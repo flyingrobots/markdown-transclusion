@@ -3,6 +3,7 @@ import { TextDecoder } from 'util';
 import { LineTranscluder } from './utils/LineTranscluder';
 import { MemoryFileCache } from './fileCache';
 import type { TransclusionOptions, TransclusionError } from './types';
+import type { PluginExecutor } from './plugins/core/PluginExecutor';
 
 export class TransclusionTransform extends Transform {
   private decoder: TextDecoder;
@@ -13,8 +14,9 @@ export class TransclusionTransform extends Transform {
   private frontmatterState: 'none' | 'yaml-start' | 'toml-start' | 'yaml-inside' | 'toml-inside' | 'complete' = 'none';
   private lineNumber: number = 0;
   private lastProcessedFiles: Set<string> = new Set();
+  private pluginExecutor?: PluginExecutor;
 
-  constructor(options: TransclusionOptions) {
+  constructor(options: TransclusionOptions, pluginExecutor?: PluginExecutor) {
     super({ readableObjectMode: false, writableObjectMode: false });
     
     // Automatically enable MemoryFileCache if conditions are met
@@ -26,8 +28,9 @@ export class TransclusionTransform extends Transform {
     }
     
     this.options = processedOptions;
-    this.lineTranscluder = new LineTranscluder(processedOptions);
+    this.lineTranscluder = new LineTranscluder(processedOptions, pluginExecutor);
     this.decoder = new TextDecoder('utf-8', { fatal: false });
+    this.pluginExecutor = pluginExecutor;
   }
   
   // Delegate error tracking to LineTranscluder
@@ -61,6 +64,19 @@ export class TransclusionTransform extends Transform {
       if (this.buffer) {
         await this.processLine(this.buffer, true);
       }
+      
+      // Apply post-processors if plugin executor is available
+      if (this.pluginExecutor && !this.options.validateOnly) {
+        try {
+          // Get the current output as a whole for post-processing
+          // Note: This would need a way to collect all output for post-processing
+          // For now, we'll emit a 'postprocess' event that can be handled externally
+          this.emit('postprocess', this.pluginExecutor);
+        } catch (error) {
+          this.emit('error', error);
+        }
+      }
+      
       callback();
     } catch (err) {
       callback(err as Error);
@@ -165,6 +181,6 @@ export class TransclusionTransform extends Transform {
   }
 }
 
-export function createTransclusionStream(options: TransclusionOptions = {}): TransclusionTransform {
-  return new TransclusionTransform(options);
+export function createTransclusionStream(options: TransclusionOptions = {}, pluginExecutor?: PluginExecutor): TransclusionTransform {
+  return new TransclusionTransform(options, pluginExecutor);
 }
