@@ -72,7 +72,7 @@ export function validatePath(filePath: string): boolean {
   }
 
   // Normalize the path to resolve . and .. segments
-  const normalized = path.normalize(filePath);
+  path.normalize(filePath);
 
   // Check for path traversal attempts
   // Note: We allow relative paths with .. because they will be resolved

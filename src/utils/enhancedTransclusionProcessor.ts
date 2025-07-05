@@ -6,8 +6,8 @@
  */
 
 import type {
-  TransclusionToken,
-  FileResolution,
+  // TransclusionToken,
+  // FileResolution,
   TransclusionOptions,
   TransclusionError
 } from '../types';
@@ -94,7 +94,7 @@ export class EnhancedTransclusionProcessor {
             error: enhancedError,
             originalError: result.error
           });
-        } catch (enhancementError) {
+        } catch {
           // If enhancement fails, fallback to original error
           enhancedResults.push({
             ...result,

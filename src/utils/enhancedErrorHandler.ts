@@ -6,7 +6,7 @@
  */
 
 import type { TransclusionError, TransclusionOptions } from '../types';
-import type { SuggestionEngine, SuggestionContext, FileSystemProvider, HeadingProvider } from './suggestionEngine';
+import type { SuggestionEngine, SuggestionContext } from './suggestionEngine';
 import { 
   EnhancedTransclusionError, 
   ErrorContextBuilder, 

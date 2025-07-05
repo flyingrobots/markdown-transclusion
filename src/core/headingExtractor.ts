@@ -106,7 +106,7 @@ export function extractHeadingRange(content: string, startHeading: string, endHe
   const normalizedEnd = endHeading ? endHeading.trim().toLowerCase() : '';
   
   let startIndex = -1;
-  let startLevel = 0;
+  // let startLevel = 0; // Reserved for future use
   let endIndex = lines.length;
   
   // If startHeading is empty, start from beginning
@@ -119,7 +119,7 @@ export function extractHeadingRange(content: string, startHeading: string, endHe
       const headingMatch = line.match(/^(#{1,6})\s+(.+)$/);
       
       if (headingMatch) {
-        const level = headingMatch[1].length;
+        // const level = headingMatch[1].length; // Reserved for future use
         const text = headingMatch[2].trim().toLowerCase();
         
         if (text === normalizedStart) {

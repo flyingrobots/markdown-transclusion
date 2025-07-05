@@ -58,16 +58,14 @@ export function extractHeadingContent(content: string, headingText: string): str
     }
   }
   
-  // Extract the content
-  const extractedLines = lines.slice(startIndex, endIndex);
+  // Extract the content (exclude the heading line itself)
+  const extractedLines = lines.slice(startIndex + 1, endIndex);
   
   // Remove trailing empty lines
   while (extractedLines.length > 0 && extractedLines[extractedLines.length - 1].trim() === '') {
     extractedLines.pop();
   }
   
-  // Remove the heading line itself if requested
-  // Keep it for now as it provides context
   return extractedLines.join('\n');
 }
 
@@ -106,7 +104,6 @@ export function extractHeadingRange(content: string, startHeading: string, endHe
   const normalizedEnd = endHeading ? endHeading.trim().toLowerCase() : '';
   
   let startIndex = -1;
-  let startLevel = 0;
   let endIndex = lines.length;
   
   // If startHeading is empty, start from beginning
@@ -119,12 +116,11 @@ export function extractHeadingRange(content: string, startHeading: string, endHe
       const headingMatch = line.match(/^(#{1,6})\s+(.+)$/);
       
       if (headingMatch) {
-        const level = headingMatch[1].length;
+        // const level = headingMatch[1].length; // Not used currently
         const text = headingMatch[2].trim().toLowerCase();
         
         if (text === normalizedStart) {
           startIndex = i;
-          startLevel = level;
           break;
         }
       }

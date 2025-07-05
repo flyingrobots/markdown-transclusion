@@ -41,7 +41,7 @@ export interface OutputFormatter {
   /**
    * Format a warning
    */
-  onWarning(message: string): void;
+  onWarning(_message: string): void;
   
   /**
    * Format validation results
@@ -86,7 +86,7 @@ abstract class BaseFormatter implements OutputFormatter {
   abstract onFileRead(filePath: string): void;
   abstract onProcessingComplete(stats: ProcessingStats): void;
   abstract onError(error: TransclusionError): void;
-  abstract onWarning(message: string): void;
+  abstract onWarning(_message: string): void;
   abstract onValidationComplete(errors: TransclusionError[]): void;
   
   updateProgress(_current: number, _total: number, _message?: string): void {
@@ -121,7 +121,7 @@ export class DefaultFormatter extends BaseFormatter {
     }
   }
   
-  onWarning(message: string): void {
+  onWarning(_message: string): void {
     this.errorStream.write(`Warning: ${message}\n`);
   }
   
@@ -167,7 +167,7 @@ export class VerboseFormatter extends BaseFormatter {
     }
   }
   
-  onWarning(message: string): void {
+  onWarning(_message: string): void {
     this.errorStream.write(`[WARN] ${message}\n`);
   }
   
@@ -214,7 +214,7 @@ export class PorcelainFormatter extends BaseFormatter {
     this.errorStream.write(parts.join('\t') + '\n');
   }
   
-  onWarning(message: string): void {
+  onWarning(_message: string): void {
     this.errorStream.write(`WARN\t${message}\n`);
   }
   
@@ -275,7 +275,7 @@ export class ProgressFormatter extends BaseFormatter {
     this.isProgressActive = true; // Resume progress after error
   }
   
-  onWarning(message: string): void {
+  onWarning(_message: string): void {
     // Store warning to display after progress completes
     // Don't interrupt progress bar
   }

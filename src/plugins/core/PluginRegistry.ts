@@ -13,10 +13,10 @@ import type {
   PostProcessPlugin,
   PluginExecutionResult,
   ValidationResult,
-  isContentTransformPlugin,
-  isFileProcessPlugin,
-  isValidatorPlugin,
-  isPostProcessPlugin
+  // isContentTransformPlugin,
+  // isFileProcessPlugin,
+  // isValidatorPlugin,
+  // isPostProcessPlugin
 } from '../interfaces/TransformPlugin';
 import type {
   PluginContext,

@@ -6,7 +6,7 @@
  */
 
 import type { 
-  PluginMetadata, 
+  // PluginMetadata, 
   PluginRegistrationInfo 
 } from './PluginMetadata';
 import type { 

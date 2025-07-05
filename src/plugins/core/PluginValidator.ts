@@ -7,11 +7,11 @@
 
 import type { 
   TransformPlugin, 
-  BasePlugin,
-  ContentTransformPlugin,
-  FileProcessPlugin,
-  ValidatorPlugin,
-  PostProcessPlugin
+  // BasePlugin,
+  // ContentTransformPlugin,
+  // FileProcessPlugin,
+  // ValidatorPlugin,
+  // PostProcessPlugin
 } from '../interfaces/TransformPlugin';
 import { PluginType } from '../interfaces/PluginMetadata';
 

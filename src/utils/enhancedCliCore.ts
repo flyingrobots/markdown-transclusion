@@ -6,7 +6,6 @@
  */
 
 import type { CliOptions } from '../cliCore';
-import type { TransclusionError } from '../types';
 import type { EnhancedTransclusionError } from './enhancedError';
 import { ErrorFormatter } from './enhancedError';
 import { EnhancedErrorHandlerFactory } from './enhancedErrorHandler';
@@ -75,7 +74,7 @@ export class EnhancedCliRunner {
       if (capturedErrors.length > 0) {
         await this.processAndDisplayErrors(capturedErrors, originalStderr);
       }
-    } catch (error) {
+    } catch {
       // Fallback to original behavior if enhancement fails
       await runBasicCli(options);
     }
@@ -106,7 +105,7 @@ export class EnhancedCliRunner {
    */
   private async enhanceErrorOutput(
     errorText: string,
-    errorHandler: any
+    _errorHandler: any
   ): Promise<string> {
     // This is a simplified approach - in a full implementation,
     // we would need to parse the error text and extract structured error information

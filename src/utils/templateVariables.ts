@@ -73,7 +73,7 @@ export function substituteTemplateVariables(
       if (typeof value === 'object') {
         try {
           return JSON.stringify(value);
-        } catch (e) {
+        } catch {
           return '[object Object]';
         }
       }

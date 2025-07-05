@@ -53,10 +53,10 @@ export class LineTranscluder {
           [] // pathStack
         );
         return transformedLine;
-      } catch (error) {
+      } catch {
         // Log plugin errors but continue processing
         const pluginError: TransclusionError = {
-          message: `Plugin error transforming main content: ${error}`,
+          message: `Plugin error transforming main content`,
           path: this.options.initialFilePath,
           code: 'PLUGIN_ERROR'
         };
@@ -115,10 +115,10 @@ export class LineTranscluder {
               this.options
             );
             processedRefs[i] = { ...processed, content: transformedContent };
-          } catch (error) {
+          } catch {
             // Log plugin errors but continue processing
             const pluginError: TransclusionError = {
-              message: `Plugin error processing file: ${error}`,
+              message: `Plugin error processing file`,
               path: processed.resolved.absolutePath,
               code: 'PLUGIN_ERROR'
             };
@@ -132,7 +132,7 @@ export class LineTranscluder {
     const finalProcessedRefs: ProcessedReference[] = [];
     
     for (const processed of processedRefs) {
-      const { ref, resolved, content, error } = processed;
+      const { ref, resolved, content } = processed;
       
       if (resolved.exists && content !== undefined) {
         // Track processed files
@@ -182,10 +182,10 @@ export class LineTranscluder {
               Array.from(newVisitedStack)
             );
             recursiveContent = transformedContent;
-          } catch (error) {
+          } catch {
             // Log plugin errors but continue processing
             const pluginError: TransclusionError = {
-              message: `Plugin error transforming content: ${error}`,
+              message: `Plugin error transforming content`,
               path: resolved.absolutePath,
               code: 'PLUGIN_ERROR'
             };
