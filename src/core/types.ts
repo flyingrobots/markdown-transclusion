@@ -5,6 +5,9 @@
 import type { FileCache } from './cache';
 import type { TransclusionError } from './errors';
 
+// Re-export TransclusionError so it's available from this module
+export type { TransclusionError } from './errors';
+
 /**
  * Options for transclusion operations
  */
