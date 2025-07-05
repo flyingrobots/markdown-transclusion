@@ -2,6 +2,7 @@ import { Transform, TransformCallback } from 'stream';
 import { TextDecoder } from 'util';
 import { LineTranscluder } from './utils/LineTranscluder';
 import { MemoryFileCache } from './fileCache';
+import { TemplateProcessor } from './utils/templateVariables';
 import type { TransclusionOptions, TransclusionError } from './types';
 import type { PluginExecutor } from './plugins/core/PluginExecutor';
 
@@ -15,6 +16,7 @@ export class TransclusionTransform extends Transform {
   private lineNumber: number = 0;
   private lastProcessedFiles: Set<string> = new Set();
   private pluginExecutor?: PluginExecutor;
+  private templateProcessor?: TemplateProcessor;
 
   constructor(options: TransclusionOptions, pluginExecutor?: PluginExecutor) {
     super({ readableObjectMode: false, writableObjectMode: false });
@@ -31,6 +33,14 @@ export class TransclusionTransform extends Transform {
     this.lineTranscluder = new LineTranscluder(processedOptions, pluginExecutor);
     this.decoder = new TextDecoder('utf-8', { fatal: false });
     this.pluginExecutor = pluginExecutor;
+    
+    // Initialize template processor if template variables are provided
+    if (options.templateVariables) {
+      this.templateProcessor = new TemplateProcessor({
+        variables: options.templateVariables,
+        preserveUnmatched: true
+      });
+    }
   }
   
   // Delegate error tracking to LineTranscluder
@@ -65,6 +75,14 @@ export class TransclusionTransform extends Transform {
         await this.processLine(this.buffer, true);
       }
       
+      // Flush any remaining template content
+      if (this.templateProcessor && !this.options.validateOnly) {
+        const remaining = this.templateProcessor.flush();
+        if (remaining) {
+          this.push(remaining);
+        }
+      }
+      
       // Apply post-processors if plugin executor is available
       if (this.pluginExecutor && !this.options.validateOnly) {
         try {
@@ -95,7 +113,12 @@ export class TransclusionTransform extends Transform {
     }
     
     // Delegate all processing logic to LineTranscluder
-    const processedLine = await this.lineTranscluder.processLine(line);
+    let processedLine = await this.lineTranscluder.processLine(line);
+    
+    // Apply template variable substitution if enabled
+    if (this.templateProcessor && !this.options.validateOnly) {
+      processedLine = this.templateProcessor.processChunk(processedLine, false);
+    }
     
     // Emit file events for newly processed files
     const currentProcessedFiles = new Set(this.lineTranscluder.getProcessedFiles());
