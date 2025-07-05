@@ -20,6 +20,11 @@ export interface TransclusionOptions {
    * Initial file path for resolving relative paths in the first file
    */
   initialFilePath?: string;
+  /**
+   * Template variables for {{variable}} substitution in content
+   * Values can be static values or functions that return values
+   */
+  templateVariables?: Record<string, string | number | boolean | null | undefined | (() => string | number | boolean | null | undefined)>;
 }
 
 /**
