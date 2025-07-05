@@ -263,7 +263,6 @@ export class PluginExecutor {
     return {
       totalPlugins: plugins.length,
       enabledPlugins: plugins.filter(p => this.registry.isPluginEnabled(p.metadata.name)).length,
-      totalExecutions,
       successfulExecutions,
       failedExecutions,
       totalDuration,

@@ -122,7 +122,7 @@ export class DefaultFormatter extends BaseFormatter {
   }
   
   onWarning(_message: string): void {
-    this.errorStream.write(`Warning: ${message}\n`);
+    this.errorStream.write(`Warning: ${_message}\n`);
   }
   
   onValidationComplete(errors: TransclusionError[]): void {
@@ -168,7 +168,7 @@ export class VerboseFormatter extends BaseFormatter {
   }
   
   onWarning(_message: string): void {
-    this.errorStream.write(`[WARN] ${message}\n`);
+    this.errorStream.write(`[WARN] ${_message}\n`);
   }
   
   onValidationComplete(errors: TransclusionError[]): void {
@@ -215,7 +215,7 @@ export class PorcelainFormatter extends BaseFormatter {
   }
   
   onWarning(_message: string): void {
-    this.errorStream.write(`WARN\t${message}\n`);
+    this.errorStream.write(`WARN\t${_message}\n`);
   }
   
   onValidationComplete(errors: TransclusionError[]): void {
