@@ -248,13 +248,11 @@ export class PluginExecutor {
     const allStats = this.registry.getAllPluginStats();
     const plugins = this.registry.getAllPlugins();
     
-    let totalExecutions = 0;
     let successfulExecutions = 0;
     let failedExecutions = 0;
     let totalDuration = 0;
     
     for (const stats of Object.values(allStats)) {
-      totalExecutions += stats.totalExecutions;
       successfulExecutions += stats.successCount;
       failedExecutions += stats.errorCount;
       totalDuration += stats.totalDuration;
