@@ -245,7 +245,7 @@ export class TableFormatterPlugin implements ContentTransformPlugin {
   /**
    * Render formatted table
    */
-  private renderTable(tableData: TableData, context: TransformContext): string {
+  private renderTable(tableData: TableData, _context: TransformContext): string {
     const { headers, rows, columnTypes, hasHeaders } = tableData;
     
     let html = '<table';
@@ -349,12 +349,13 @@ export class TableFormatterPlugin implements ContentTransformPlugin {
         }
         return this.escapeHtml(trimmed);
         
-      case ColumnType.DATE:
+      case ColumnType.DATE: {
         const date = new Date(trimmed);
         if (!isNaN(date.getTime())) {
           return `<time datetime="${date.toISOString()}">${date.toLocaleDateString()}</time>`;
         }
         return this.escapeHtml(trimmed);
+      }
         
       default:
         // Truncate long text if needed

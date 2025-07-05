@@ -1,5 +1,5 @@
 import type { FileCache } from './cache';
-import { safeReadFile, safeReadFileSync, FileReaderErrorCode, type FileReadResult, type FileValidationError } from './coreUtils';
+import { safeReadFile, safeReadFileSync, FileReaderErrorCode } from './coreUtils';
 
 // Maximum file size for buffered reading (1MB)
 // Larger files should use streaming (to be implemented in later commits)

@@ -5,7 +5,7 @@ import { Writable } from 'stream';
 import { TransclusionTransform } from './stream';
 import { parseCliArgs, getHelpText, getVersionText } from './utils/cliArgs';
 import { StreamLogger, LogLevel } from './utils/logger';
-import { OutputMode, type OutputFormatter, type ProcessingStats } from './utils/outputFormatter';
+import { OutputMode, type ProcessingStats } from './utils/outputFormatter';
 import { createFormatter } from './utils/enhancedOutputFormatter';
 import { createPluginExecutor } from './plugins';
 import type { TransclusionOptions, TransclusionError } from './types';

@@ -103,7 +103,7 @@ export class CodeHighlighterPlugin implements ContentTransformPlugin {
     context.logger.debug('Code highlighter plugin initialized', { config: this.config });
   }
   
-  transform(content: string, context: TransformContext): string {
+  transform(content: string, _context: TransformContext): string {
     let transformedContent = content;
     
     // Transform code blocks

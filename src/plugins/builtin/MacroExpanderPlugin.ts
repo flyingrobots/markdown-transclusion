@@ -215,7 +215,7 @@ export class MacroExpanderPlugin implements ContentTransformPlugin {
     // This allows accessing variables with {{VAR:variable_name}} syntax
     this.builtinMacros.VAR = {
       description: 'Access variable value (use VAR:variable_name)',
-      generate: (context) => {
+      generate: (_context) => {
         // This is a special case - the macro name contains the variable name
         // The actual implementation would need to parse the full macro text
         return '[VAR macro requires variable name]';

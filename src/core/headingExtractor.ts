@@ -124,7 +124,6 @@ export function extractHeadingRange(content: string, startHeading: string, endHe
         
         if (text === normalizedStart) {
           startIndex = i;
-          startLevel = level;
           break;
         }
       }

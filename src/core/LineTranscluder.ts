@@ -2,9 +2,9 @@ import {
   parseAndResolveRefs,
   composeLineOutput,
   extractErrors,
-  ProcessedReference,
   readResolvedRefs
 } from './transclusionProcessor';
+import type { ProcessedReference } from './transclusionProcessor';
 import type { TransclusionOptions } from './types';
 import type { TransclusionError } from './errors';
 import type { FileCache } from './cache';
