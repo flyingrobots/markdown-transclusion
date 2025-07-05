@@ -24,7 +24,7 @@ export interface TransclusionOptions {
    * Template variables for {{variable}} substitution in content
    * Values can be static values or functions that return values
    */
-  templateVariables?: Record<string, string | number | boolean | null | undefined | (() => string | number | boolean | null | undefined)>;
+  templateVariables?: Record<string, string | number | boolean | null | undefined | Date | (() => string | number | boolean | null | undefined | Date)>;
 }
 
 /**

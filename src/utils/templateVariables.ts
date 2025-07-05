@@ -8,7 +8,7 @@
  * Values can be static values or functions that return values
  */
 export interface TemplateVariables {
-  [key: string]: string | number | boolean | null | undefined | (() => string | number | boolean | null | undefined);
+  [key: string]: string | number | boolean | null | undefined | Date | (() => string | number | boolean | null | undefined | Date);
 }
 
 /**
@@ -64,9 +64,20 @@ export function substituteTemplateVariables(
         }
       }
       
-      // Convert value to string, handling null/undefined
+      // Convert value to string, handling special cases
       if (value === null) return 'null';
       if (value === undefined) return 'undefined';
+      if (value instanceof Date) return value.toISOString();
+      
+      // Handle other objects that might not stringify well
+      if (typeof value === 'object') {
+        try {
+          return JSON.stringify(value);
+        } catch (e) {
+          return '[object Object]';
+        }
+      }
+      
       return String(value);
     }
     
