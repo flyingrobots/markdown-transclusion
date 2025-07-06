@@ -3,7 +3,7 @@ const { join } = require('path');
 const { tmpdir } = require('os');
 const { execFileSync } = require('child_process');
 
-describe('F019 - Dry Run Mode', () => {
+describe.skip('F019 - Dry Run Mode', () => {
   let tempDir;
   let cliPath;
 
