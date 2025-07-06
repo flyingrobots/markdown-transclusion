@@ -1,2 +1,2 @@
 # Run comprehensive pre-push checks using Docker
-exec ./scripts/pre-push-test.sh
+exec npx tsx scripts/pre-push-test.ts

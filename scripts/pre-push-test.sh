@@ -34,6 +34,13 @@ fi
 print_status "Running pre-push checks..."
 echo
 
+# Initialize PID variables
+LINT_PID=""
+TYPECHECK_PID=""
+NODE18_PID=""
+NODE20_PID=""
+NODE22_PID=""
+
 # Function to run a command in background with labeled output
 run_labeled() {
     local label="$1"
@@ -43,20 +50,28 @@ run_labeled() {
     $command 2>&1 | while IFS= read -r line; do
         echo "[$label] $line"
     done &
-    return $!
+    echo $!
 }
 
 # Cleanup function to kill all background processes
 cleanup_processes() {
     print_warning "Cleaning up background processes..."
-    if [ -n "$LINT_PID" ]; then kill $LINT_PID 2>/dev/null || true; fi
-    if [ -n "$TYPECHECK_PID" ]; then kill $TYPECHECK_PID 2>/dev/null || true; fi
-    if [ -n "$NODE18_PID" ]; then kill $NODE18_PID 2>/dev/null || true; fi
-    if [ -n "$NODE20_PID" ]; then kill $NODE20_PID 2>/dev/null || true; fi
-    if [ -n "$NODE22_PID" ]; then kill $NODE22_PID 2>/dev/null || true; fi
     
-    # Also clean up any running Docker containers
-    docker compose -f test/docker/docker-compose.test.yml down 2>/dev/null || true
+    # Kill background processes if they exist
+    if [ "${LINT_PID:-}" ]; then kill $LINT_PID 2>/dev/null || true; fi
+    if [ "${TYPECHECK_PID:-}" ]; then kill $TYPECHECK_PID 2>/dev/null || true; fi
+    if [ "${NODE18_PID:-}" ]; then kill $NODE18_PID 2>/dev/null || true; fi
+    if [ "${NODE20_PID:-}" ]; then kill $NODE20_PID 2>/dev/null || true; fi
+    if [ "${NODE22_PID:-}" ]; then kill $NODE22_PID 2>/dev/null || true; fi
+    
+    # Kill any remaining background jobs
+    jobs -p | xargs -r kill 2>/dev/null || true
+    
+    # Force stop any running Docker containers from this compose file
+    docker compose -f test/docker/docker-compose.test.yml down --remove-orphans 2>/dev/null || true
+    
+    # Kill any containers that might still be running
+    docker ps -q --filter "name=markdown-transclusion-test" | xargs -r docker kill 2>/dev/null || true
 }
 
 # Set up trap to cleanup on script exit
@@ -67,20 +82,15 @@ print_status "Running all checks in parallel with streaming output..."
 echo
 
 # Start all processes in background with labeled output
-run_labeled "lint" "docker compose -f test/docker/docker-compose.test.yml run --rm -T lint"
-LINT_PID=$!
+LINT_PID=$(run_labeled "lint" "docker compose -f test/docker/docker-compose.test.yml run --rm -T lint")
 
-run_labeled "typecheck" "docker compose -f test/docker/docker-compose.test.yml run --rm -T type-check"
-TYPECHECK_PID=$!
+TYPECHECK_PID=$(run_labeled "typecheck" "docker compose -f test/docker/docker-compose.test.yml run --rm -T type-check")
 
-run_labeled "node18" "docker compose -f test/docker/docker-compose.test.yml run --rm -T test-node18"
-NODE18_PID=$!
+NODE18_PID=$(run_labeled "node18" "docker compose -f test/docker/docker-compose.test.yml run --rm -T test-node18")
 
-run_labeled "node20" "docker compose -f test/docker/docker-compose.test.yml run --rm -T test-node20"
-NODE20_PID=$!
+NODE20_PID=$(run_labeled "node20" "docker compose -f test/docker/docker-compose.test.yml run --rm -T test-node20")
 
-run_labeled "node22" "docker compose -f test/docker/docker-compose.test.yml run --rm -T test-node22"
-NODE22_PID=$!
+NODE22_PID=$(run_labeled "node22" "docker compose -f test/docker/docker-compose.test.yml run --rm -T test-node22")
 
 echo
 print_status "Waiting for all checks to complete..."
