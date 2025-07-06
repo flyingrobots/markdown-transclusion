@@ -409,6 +409,38 @@ function parseShortFlag(
  * Parse variable string (key=value,key2=value2)
  */
 function parseVariables(str: string): Result<Record<string, string>, string> {
+  // First, try to parse as JSON for richer data types
+  if (str.trim().startsWith('{')) {
+    try {
+      const parsed = JSON.parse(str);
+      if (typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed)) {
+        // Convert all values to strings for CLI compatibility
+        const vars: Record<string, string> = {};
+        for (const [key, value] of Object.entries(parsed)) {
+          if (value === null) {
+            vars[key] = 'null';
+          } else if (value === undefined) {
+            vars[key] = 'undefined';
+          } else if (value instanceof Date) {
+            vars[key] = value.toISOString();
+          } else if (typeof value === 'object') {
+            try {
+              vars[key] = JSON.stringify(value);
+            } catch {
+              vars[key] = '[object Object]';
+            }
+          } else {
+            vars[key] = String(value);
+          }
+        }
+        return Ok(vars);
+      }
+    } catch {
+      // If JSON parsing fails, fall through to key=value parsing
+    }
+  }
+  
+  // Parse as comma-separated key=value pairs
   const vars: Record<string, string> = {};
   const pairs = str.split(',');
   

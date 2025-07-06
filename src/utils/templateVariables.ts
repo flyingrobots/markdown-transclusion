@@ -58,9 +58,9 @@ export function substituteTemplateVariables(
         try {
           value = value();
         } catch (error) {
-          // If function throws, treat as undefined
+          // If function throws, preserve the original variable
           console.error(`Error calling template function for ${variableName}:`, error);
-          value = undefined;
+          return match;
         }
       }
       
