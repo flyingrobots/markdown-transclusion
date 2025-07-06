@@ -117,3 +117,4 @@ temp/
 .settings/
 *.sublime-workspace.obsidian
 *.obsidian
+.husky/_

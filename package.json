@@ -25,7 +25,8 @@
     "type-check": "tsc --noEmit",
     "clean": "rm -rf dist coverage",
     "preversion": "git diff --quiet && git diff --cached --quiet && git branch --show-current | grep -q '^main$' || (echo 'Error: npm version requires clean main branch' && exit 1)",
-    "prepublishOnly": "npm run clean && npm run build && npm test"
+    "prepublishOnly": "npm run clean && npm run build && npm test",
+    "prepare": "husky"
   },
   "keywords": [
     "markdown",
@@ -57,6 +58,7 @@
     "conventional-changelog-cli": "^5.0.0",
     "eslint": "^9.27.0",
     "fast-check": "^3.15.0",
+    "husky": "^9.1.7",
     "jest": "^29.7.0",
     "ts-jest": "^29.3.4",
     "typescript": "^5.8.3"
