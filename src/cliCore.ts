@@ -72,10 +72,10 @@ export async function runCli(options: CliOptions): Promise<void> {
   }
   
   // Create logger with proper streams for POSIX compliance
-  // In default mode, use ERROR level for minimal output
+  // In default mode, use WARN level to show warnings but not info
   const logLevel = args.logLevel !== undefined 
     ? args.logLevel 
-    : (outputMode === OutputMode.DEFAULT ? LogLevel.ERROR : LogLevel.INFO);
+    : (outputMode === OutputMode.DEFAULT ? LogLevel.WARN : LogLevel.INFO);
     
   const logger = new StreamLogger(
     stderr,
@@ -108,7 +108,7 @@ export async function runCli(options: CliOptions): Promise<void> {
     };
     
     // Create output formatter with enhanced error support
-    const formatter = createFormatter(outputMode, stderr, true, transclusionOptions.basePath, stdout);
+    const formatter = createFormatter(outputMode, stderr, true, transclusionOptions.basePath, stdout, logLevel, transclusionOptions.strict);
     
     // Initialize the enhanced formatter if it supports it
     if ('init' in formatter && typeof formatter.init === 'function') {
@@ -176,24 +176,23 @@ export async function runCli(options: CliOptions): Promise<void> {
       }
     });
     
-    // Handle transform errors
-    transform.on('error', (error: Error | TransclusionError) => {
-      // Convert general errors to TransclusionError format
-      const transclusionError: TransclusionError = 'path' in error 
-        ? error 
-        : {
-            message: error.message || String(error),
-            path: 'unknown',
-            line: undefined,
-            code: 'code' in error && typeof error.code === 'string' ? error.code : 'UNKNOWN_ERROR'
-          };
-      formatter.onError(transclusionError);
-      if (!transclusionOptions.strict) {
-        warningCount++;
-      }
+    // Handle transclusion errors (missing files, circular refs, etc)
+    transform.on('transclusion-error', (error: TransclusionError) => {
+      // Always call onError to allow enhanced formatting
+      formatter.onError(error);
+      
       if (transclusionOptions.strict) {
         gracefulExit(1, exit).catch(console.error);
+      } else {
+        // In non-strict mode, count as warning but don't exit
+        warningCount++;
       }
+    });
+    
+    // Handle actual stream errors
+    transform.on('error', (error: Error) => {
+      logger.error('Stream processing error:', error);
+      gracefulExit(1, exit).catch(console.error);
     });
     
     // Handle warnings
@@ -217,22 +216,10 @@ export async function runCli(options: CliOptions): Promise<void> {
     
     // Check for errors after processing
     const errors = transform.errors;
-    if (errors.length > 0 && outputMode !== OutputMode.DEFAULT) {
-      // In non-default modes, errors are already reported via formatter
-      if (transclusionOptions.strict) {
-        await gracefulExit(1, exit);
-        return;
-      }
-    } else if (errors.length > 0 && outputMode === OutputMode.DEFAULT) {
-      // In default mode, only show errors
-      for (const error of errors) {
-        formatter.onError(error);
-      }
-      
-      if (transclusionOptions.strict) {
-        await gracefulExit(1, exit);
-        return;
-      }
+    // In strict mode, we should exit with error if there were any errors
+    if (errors.length > 0 && transclusionOptions.strict) {
+      await gracefulExit(1, exit);
+      return;
     }
     
     // Apply post-processors if we have content and plugin executor

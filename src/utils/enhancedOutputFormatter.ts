@@ -13,6 +13,7 @@ import {
   DefaultFormatter,
   VerboseFormatter 
 } from './outputFormatter';
+import { LogLevel } from './logger';
 import {
   LevenshteinFuzzyMatcher,
   NodeFileSystemProvider,
@@ -34,7 +35,9 @@ export class EnhancedOutputFormatter implements OutputFormatter {
     mode: OutputMode,
     private readonly stderr: NodeJS.WriteStream,
     private readonly stdout: NodeJS.WriteStream,
-    basePath?: string
+    basePath?: string,
+    logLevel: LogLevel = LogLevel.INFO,
+    strict: boolean = false
   ) {
     this.basePath = basePath;
     this.suggestionEngine = new SuggestionEngine(
@@ -45,8 +48,8 @@ export class EnhancedOutputFormatter implements OutputFormatter {
     
     // Use existing formatters as base
     this.baseFormatter = mode === OutputMode.VERBOSE
-      ? new VerboseFormatter(stderr, stdout)
-      : new DefaultFormatter(stderr, stdout);
+      ? new VerboseFormatter(stderr, stdout, logLevel, strict)
+      : new DefaultFormatter(stderr, stdout, logLevel, strict);
   }
 
   async init(): Promise<void> {
@@ -247,9 +250,11 @@ export function createEnhancedFormatter(
   mode: OutputMode,
   stderr: NodeJS.WriteStream,
   stdout: NodeJS.WriteStream,
-  basePath?: string
+  basePath?: string,
+  logLevel?: LogLevel,
+  strict?: boolean
 ): EnhancedOutputFormatter {
-  return new EnhancedOutputFormatter(mode, stderr, stdout, basePath);
+  return new EnhancedOutputFormatter(mode, stderr, stdout, basePath, logLevel, strict);
 }
 
 /**
@@ -260,13 +265,15 @@ export function createFormatter(
   stderr: NodeJS.WriteStream,
   enableEnhancement: boolean = true,
   basePath?: string,
-  stdout?: NodeJS.WriteStream
+  stdout?: NodeJS.WriteStream,
+  logLevel?: LogLevel,
+  strict?: boolean
 ): OutputFormatter {
   if (enableEnhancement) {
-    return createEnhancedFormatter(mode, stderr, stdout || stderr, basePath);
+    return createEnhancedFormatter(mode, stderr, stdout || stderr, basePath, logLevel, strict);
   }
   
   // Fallback to original formatter
   const { createFormatter: originalCreateFormatter } = require('./outputFormatter');
-  return originalCreateFormatter(mode, stderr, stdout || stderr);
+  return originalCreateFormatter(mode, stderr, stdout || stderr, logLevel, strict);
 }

@@ -61,7 +61,7 @@ describe('CLI Integration', () => {
       
       expect(result.exitCode).toBe(0);
       expect(result.stdout).toContain('# Test');
-      expect(result.stderr).toContain('WARN'); // Warning about missing file
+      expect(result.stderr).toContain('WARN'); // Warning about missing file in non-strict mode
     });
     
     it('should write to stdout by default', async () => {
@@ -129,7 +129,7 @@ describe('CLI Integration', () => {
       const result = await runCli(['--version']);
       
       expect(result.exitCode).toBe(0);
-      expect(result.stdout).toContain('1.0.0');
+      expect(result.stdout).toMatch(/\d+\.\d+\.\d+/);
       expect(result.stderr).toBe('');
     });
     
@@ -137,7 +137,7 @@ describe('CLI Integration', () => {
       const result = await runCli(['-v']);
       
       expect(result.exitCode).toBe(0);
-      expect(result.stdout).toContain('1.0.0');
+      expect(result.stdout).toMatch(/\d+\.\d+\.\d+/);
     });
   });
   

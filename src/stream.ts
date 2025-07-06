@@ -112,8 +112,20 @@ export class TransclusionTransform extends Transform {
       }
     }
     
+    // Store error count before processing
+    const errorCountBefore = this.lineTranscluder.getErrors().length;
+    
     // Delegate all processing logic to LineTranscluder
     let processedLine = await this.lineTranscluder.processLine(line);
+    
+    // Check if new errors were added and emit them
+    const currentErrors = this.lineTranscluder.getErrors();
+    if (currentErrors.length > errorCountBefore) {
+      // Emit new errors as 'transclusion-error' events to avoid breaking the stream
+      for (let i = errorCountBefore; i < currentErrors.length; i++) {
+        this.emit('transclusion-error', currentErrors[i]);
+      }
+    }
     
     // Apply template variable substitution if enabled
     if (this.templateProcessor && !this.options.validateOnly) {

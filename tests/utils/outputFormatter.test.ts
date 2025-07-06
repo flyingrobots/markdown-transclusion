@@ -73,14 +73,14 @@ describe('Output Formatters', () => {
       
       formatter.onError(error);
       
-      expect(mockStderr.getData()).toContain('Error: File not found');
-      expect(mockStderr.getData()).toContain('in /path/to/missing.md:10');
+      expect(mockStderr.getData()).toContain('WARN: File not found');
+      expect(mockStderr.getData()).toContain('in /path/to/missing.md');
     });
     
     it('should output warnings to stderr', () => {
       formatter.onWarning('Deprecated syntax used');
       
-      expect(mockStderr.getData()).toBe('Warning: Deprecated syntax used\n');
+      expect(mockStderr.getData()).toBe('WARN: Deprecated syntax used\n');
     });
     
     it('should output validation failures', () => {
@@ -141,9 +141,9 @@ describe('Output Formatters', () => {
       formatter.onError(error);
       
       const output = mockStderr.getData();
-      expect(output).toContain('[ERROR] Circular reference detected');
-      expect(output).toContain('[ERROR] Location: /path/to/circular.md:25');
-      expect(output).toContain('[ERROR] Code: CIRCULAR_REFERENCE');
+      expect(output).toContain('[WARN] Circular reference detected');
+      expect(output).toContain('[WARN] Location: /path/to/circular.md:25');
+      expect(output).toContain('[WARN] Code: CIRCULAR_REFERENCE');
     });
     
     it('should show validation results', () => {
@@ -199,7 +199,7 @@ describe('Output Formatters', () => {
       
       formatter.onError(error);
       
-      expect(mockStderr.getData()).toBe('ERROR\tFILE_NOT_FOUND\tFile not found: missing.md\t/docs/main.md\t42\n');
+      expect(mockStderr.getData()).toBe('WARN\tFILE_NOT_FOUND\tFile not found: missing.md\t/docs/main.md\t42\n');
     });
     
     it('should output warnings in tab-separated format', () => {
@@ -277,7 +277,7 @@ describe('Output Formatters', () => {
       formatter.onError(error);
       
       const output = mockStderr.getData();
-      expect(output).toContain('✗ Error: Parse error in bad.md:5');
+      expect(output).toContain('⚠ Warning: Parse error in bad.md:5');
     });
   });
   

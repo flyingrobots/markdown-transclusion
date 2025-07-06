@@ -58,8 +58,8 @@ export function extractHeadingContent(content: string, headingText: string): str
     }
   }
   
-  // Extract the content (exclude the heading line itself)
-  const extractedLines = lines.slice(startIndex + 1, endIndex);
+  // Extract the content (include the heading line itself)
+  const extractedLines = lines.slice(startIndex, endIndex);
   
   // Remove trailing empty lines
   while (extractedLines.length > 0 && extractedLines[extractedLines.length - 1].trim() === '') {

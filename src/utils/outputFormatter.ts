@@ -3,6 +3,7 @@
  */
 
 import type { TransclusionError } from '../types';
+import { LogLevel } from './logger';
 
 /**
  * Output mode configuration
@@ -76,10 +77,14 @@ export interface ProcessingStats {
 abstract class BaseFormatter implements OutputFormatter {
   protected errorStream: NodeJS.WriteStream;
   protected outStream: NodeJS.WriteStream;
+  protected logLevel: LogLevel;
+  protected strict: boolean;
   
-  constructor(errorStream: NodeJS.WriteStream, outStream: NodeJS.WriteStream) {
+  constructor(errorStream: NodeJS.WriteStream, outStream: NodeJS.WriteStream, logLevel: LogLevel = LogLevel.INFO, strict: boolean = false) {
     this.errorStream = errorStream;
     this.outStream = outStream;
+    this.logLevel = logLevel;
+    this.strict = strict;
   }
   
   abstract onProcessingStart(inputPath: string | undefined): void;
@@ -102,6 +107,10 @@ abstract class BaseFormatter implements OutputFormatter {
  * Default formatter - silence is golden
  */
 export class DefaultFormatter extends BaseFormatter {
+  constructor(errorStream: NodeJS.WriteStream, outStream: NodeJS.WriteStream, logLevel: LogLevel = LogLevel.INFO, strict: boolean = false) {
+    super(errorStream, outStream, logLevel, strict);
+  }
+  
   onProcessingStart(_inputPath: string | undefined): void {
     // Silent by default
   }
@@ -115,14 +124,18 @@ export class DefaultFormatter extends BaseFormatter {
   }
   
   onError(error: TransclusionError): void {
-    this.errorStream.write(`Error: ${error.message}\n`);
+    const prefix = this.strict ? 'ERROR' : 'WARN';
+    this.errorStream.write(`${prefix}: ${error.message}`);
     if (error.path) {
-      this.errorStream.write(`  in ${error.path}${error.line ? `:${error.line}` : ''}\n`);
+      this.errorStream.write(` in ${error.path}`);
     }
+    this.errorStream.write('\n');
   }
   
   onWarning(_message: string): void {
-    this.errorStream.write(`Warning: ${_message}\n`);
+    if (this.logLevel >= LogLevel.WARN) {
+      this.errorStream.write(`WARN: ${_message}\n`);
+    }
   }
   
   onValidationComplete(errors: TransclusionError[]): void {
@@ -137,6 +150,10 @@ export class DefaultFormatter extends BaseFormatter {
  */
 export class VerboseFormatter extends BaseFormatter {
   private startTime: number = 0;
+  
+  constructor(errorStream: NodeJS.WriteStream, outStream: NodeJS.WriteStream, logLevel: LogLevel = LogLevel.INFO, strict: boolean = false) {
+    super(errorStream, outStream, logLevel, strict);
+  }
   
   onProcessingStart(inputPath: string | undefined): void {
     this.startTime = Date.now();
@@ -158,17 +175,20 @@ export class VerboseFormatter extends BaseFormatter {
   }
   
   onError(error: TransclusionError): void {
-    this.errorStream.write(`[ERROR] ${error.message}\n`);
+    const prefix = this.strict ? 'ERROR' : 'WARN';
+    this.errorStream.write(`[${prefix}] ${error.message}\n`);
     if (error.path) {
-      this.errorStream.write(`[ERROR] Location: ${error.path}${error.line ? `:${error.line}` : ''}\n`);
+      this.errorStream.write(`[${prefix}] Location: ${error.path}${error.line ? `:${error.line}` : ''}\n`);
     }
     if (error.code) {
-      this.errorStream.write(`[ERROR] Code: ${error.code}\n`);
+      this.errorStream.write(`[${prefix}] Code: ${error.code}\n`);
     }
   }
   
   onWarning(_message: string): void {
-    this.errorStream.write(`[WARN] ${_message}\n`);
+    if (this.logLevel >= LogLevel.WARN) {
+      this.errorStream.write(`[WARN] ${_message}\n`);
+    }
   }
   
   onValidationComplete(errors: TransclusionError[]): void {
@@ -191,6 +211,10 @@ export class VerboseFormatter extends BaseFormatter {
  * Porcelain formatter - machine-readable output
  */
 export class PorcelainFormatter extends BaseFormatter {
+  constructor(errorStream: NodeJS.WriteStream, outStream: NodeJS.WriteStream, logLevel: LogLevel = LogLevel.INFO, strict: boolean = false) {
+    super(errorStream, outStream, logLevel, strict);
+  }
+  
   onProcessingStart(_inputPath: string | undefined): void {
     // No output for porcelain mode start
   }
@@ -204,7 +228,8 @@ export class PorcelainFormatter extends BaseFormatter {
   }
   
   onError(error: TransclusionError): void {
-    const parts = ['ERROR', error.code || 'UNKNOWN', error.message];
+    const prefix = this.strict ? 'ERROR' : 'WARN';
+    const parts = [prefix, error.code || 'UNKNOWN', error.message];
     if (error.path) {
       parts.push(error.path);
       if (error.line) {
@@ -215,7 +240,9 @@ export class PorcelainFormatter extends BaseFormatter {
   }
   
   onWarning(_message: string): void {
-    this.errorStream.write(`WARN\t${_message}\n`);
+    if (this.logLevel >= LogLevel.WARN) {
+      this.errorStream.write(`WARN\t${_message}\n`);
+    }
   }
   
   onValidationComplete(errors: TransclusionError[]): void {
@@ -247,6 +274,10 @@ export class ProgressFormatter extends BaseFormatter {
   private lastMessage = '';
   private isProgressActive = false;
   
+  constructor(errorStream: NodeJS.WriteStream, outStream: NodeJS.WriteStream, logLevel: LogLevel = LogLevel.INFO, strict: boolean = false) {
+    super(errorStream, outStream, logLevel, strict);
+  }
+  
   onProcessingStart(inputPath: string | undefined): void {
     this.errorStream.write(`Processing ${inputPath || 'stdin'}...\n`);
   }
@@ -267,7 +298,9 @@ export class ProgressFormatter extends BaseFormatter {
   
   onError(error: TransclusionError): void {
     this.finishProgress();
-    this.errorStream.write(`\n✗ Error: ${error.message}`);
+    const icon = this.strict ? '✗' : '⚠';
+    const label = this.strict ? 'Error' : 'Warning';
+    this.errorStream.write(`\n${icon} ${label}: ${error.message}`);
     if (error.path) {
       this.errorStream.write(` in ${error.path}${error.line ? `:${error.line}` : ''}`);
     }
@@ -333,17 +366,19 @@ export class ProgressFormatter extends BaseFormatter {
 export function createFormatter(
   mode: OutputMode,
   errorStream: NodeJS.WriteStream,
-  outStream: NodeJS.WriteStream
+  outStream: NodeJS.WriteStream,
+  logLevel: LogLevel = LogLevel.INFO,
+  strict: boolean = false
 ): OutputFormatter {
   switch (mode) {
     case OutputMode.VERBOSE:
-      return new VerboseFormatter(errorStream, outStream);
+      return new VerboseFormatter(errorStream, outStream, logLevel, strict);
     case OutputMode.PORCELAIN:
-      return new PorcelainFormatter(errorStream, outStream);
+      return new PorcelainFormatter(errorStream, outStream, logLevel, strict);
     case OutputMode.PROGRESS:
-      return new ProgressFormatter(errorStream, outStream);
+      return new ProgressFormatter(errorStream, outStream, logLevel, strict);
     case OutputMode.DEFAULT:
     default:
-      return new DefaultFormatter(errorStream, outStream);
+      return new DefaultFormatter(errorStream, outStream, logLevel, strict);
   }
 }
