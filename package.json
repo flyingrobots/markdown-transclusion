@@ -1,6 +1,6 @@
 {
   "name": "markdown-transclusion",
-  "version": "1.1.2",
+  "version": "1.2.0",
   "description": "Stream-based library for resolving Obsidian-style transclusion references in Markdown documents",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -33,7 +33,7 @@
     "test:docker": "docker compose -f test/docker/docker-compose.test.yml run --rm test-node20",
     "test:all-versions": "tsx scripts/pre-push-test.ts",
     "test:node18": "docker compose -f test/docker/docker-compose.test.yml run --rm test-node18",
-    "test:node20": "docker compose -f test/docker/docker-compose.test.yml run --rm test-node20", 
+    "test:node20": "docker compose -f test/docker/docker-compose.test.yml run --rm test-node20",
     "test:node22": "docker compose -f test/docker/docker-compose.test.yml run --rm test-node22",
     "lint:docker": "docker compose -f test/docker/docker-compose.test.yml run --rm lint",
     "test:cleanup": "docker compose -f test/docker/docker-compose.test.yml down -v",
