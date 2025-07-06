@@ -8,6 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Template Variable Substitution** - Dynamic content substitution in transcluded files
+  - Support for `{{variable}}` syntax within transcluded content
+  - CLI flag `--template-variables` for passing variables from command line
+  - Handles all JavaScript types: strings, numbers, booleans, null, undefined, Date objects, functions
+  - Function values are called to get dynamic values at substitution time
+  - Preserves unmatched variables when values are not provided
+  - Stream-based processing handles variables that span chunk boundaries
 - **Plugin System Architecture** - Comprehensive plugin system following SOLID principles
   - Plugin loader with file/directory support and validation
   - Plugin registry with lifecycle management and priority-based execution
@@ -40,6 +47,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Enhanced transclusion syntax documentation with new features
   - Plugin system usage examples and development guide
   - CLI options documentation with all new flags
+
+### Fixed
+- **CLI Output Format** - Standardized error and warning output
+  - Output 'WARN:' prefix for warnings instead of 'Warning:'
+  - Output 'ERROR:' prefix for errors in strict mode  
+  - Output 'WARN:' prefix for errors in non-strict mode
+  - Fixed log level handling to properly suppress warnings when log level is ERROR
+- **TypeScript Errors** - Resolved all TypeScript compilation errors
+  - Fixed missing TransclusionError export from core/types module
+  - Resolved type errors in stream processing and CLI modules
+- **ESLint Compliance** - Fixed all linting errors for CI/CD
+  - Removed unused variables and imports
+  - Fixed lexical declarations in switch case blocks
+  - Corrected parsing errors from automated fixes
 
 ### Technical
 - All new features follow SOLID principles (SRP, DI, KISS, YAGNI)

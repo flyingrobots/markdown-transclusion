@@ -6,6 +6,44 @@
 
 Stream-based library and CLI for resolving Obsidian-style transclusion references in Markdown documents.
 
+## 🎉 What's New (Since v1.1.2)
+
+### ✨ Template Variable Substitution in Content
+Now you can use `{{variables}}` within your transcluded content, not just in filenames!
+
+```markdown
+<!-- template.md -->
+Welcome {{userName}}! Today is {{currentDate}}.
+Your account type is: {{accountType}}
+
+<!-- Usage -->
+markdown-transclusion template.md --template-variables "userName=John,currentDate=2025-07-06,accountType=premium"
+
+<!-- Output -->
+Welcome John! Today is 2025-07-06.
+Your account type is: premium
+```
+
+**Key features:**
+- Supports all JavaScript types (strings, numbers, booleans, null, undefined, Date objects)
+- Function values are called dynamically: `getDate: () => new Date().toISOString()`
+- Preserves unmatched variables when no value is provided
+- Works seamlessly with file transclusion and all existing features
+
+### 🔧 Improved Error Handling
+- Standardized error/warning output format (`WARN:` and `ERROR:` prefixes)
+- Better log level support - warnings properly suppressed when `--log-level ERROR`
+- Enhanced error messages with intelligent suggestions remain fully functional
+
+### 🐛 Bug Fixes
+- Fixed TypeScript compilation errors and missing exports
+- Resolved all ESLint errors for clean CI/CD builds
+- Corrected output format inconsistencies between strict and non-strict modes
+
+See the [CHANGELOG](./CHANGELOG.md) for complete details.
+
+---
+
 ## Overview
 
 `markdown-transclusion` processes Markdown files containing transclusion syntax (`![[filename]]`) and resolves these references by including the content of referenced files. This enables modular documentation workflows where content can be composed from reusable components.
@@ -73,6 +111,7 @@ Designed for the Universal Charter project's multilingual documentation pipeline
 ✅ **Heading extraction** - Include specific sections using `![[file#heading]]` syntax  
 ✅ **Heading range extraction** - Include ranges using `![[file#start:end]]` syntax  
 ✅ **Variable substitution** - Dynamic file references with `{{variable}}` placeholders  
+✅ **Template variables** - Replace `{{variables}}` within transcluded content  
 ✅ **Stream processing** - Memory-efficient processing of large documents  
 ✅ **Path resolution** - Relative paths resolved from parent file context  
 ✅ **Security built-in** - Path traversal protection and base directory enforcement  
@@ -106,8 +145,11 @@ markdown-transclusion input.md
 # Output to file instead of stdout
 markdown-transclusion input.md --output output.md
 
-# Process with variables
+# Process with variables (for file references)
 markdown-transclusion template.md --variables "lang=es,version=2.0"
+
+# Process with template variables (for content substitution)
+markdown-transclusion template.md --template-variables "userName=Alice,date=2025-07-06"
 
 # Validate references without processing
 markdown-transclusion docs/index.md --validate-only --strict
@@ -297,11 +339,22 @@ if (stream.errors.length > 0) {
 <!-- Multiple variables -->
 ![[docs/{{lang}}/intro-{{version}}]]  <!-- Variables: lang=es, version=2 → docs/es/intro-2.md -->
 
+<!-- Template variables in content -->
+<!-- greeting.md contains: Hello {{name}}! Your balance is {{balance}}. -->
+![[greeting]]
+<!-- With --template-variables "name=John,balance=100" outputs: Hello John! Your balance is 100. -->
+
 <!-- Heading with spaces -->
 ![[architecture#System Overview]]
 
 <!-- Heading ranges -->
 ![[tutorial#Getting Started:Advanced Usage]]  <!-- Include from "Getting Started" to "Advanced Usage" -->
+
+<!-- Combining file and template variables -->
+![[templates/email-{{lang}}]]  <!-- File variable -->
+<!-- If email-en.md contains: Dear {{customerName}}, your order {{orderId}} is ready. -->
+<!-- With --variables "lang=en" --template-variables "customerName=Alice,orderId=12345" -->
+<!-- Output: Dear Alice, your order 12345 is ready. -->
 
 <!-- Error handling with intelligent suggestions -->
 ![[installaton.md]]
@@ -511,7 +564,8 @@ stream.on('finish', () => {
 |--------|------|---------|-------------|
 | `basePath` | string | cwd | Base directory for resolving references |
 | `extensions` | string[] | ['md', 'markdown'] | File extensions to try |
-| `variables` | object | {} | Variables for substitution |
+| `variables` | object | {} | Variables for file reference substitution |
+| `templateVariables` | object | {} | Variables for content substitution |
 | `maxDepth` | number | 10 | Maximum recursion depth |
 | `strict` | boolean | false | Exit on errors |
 | `validateOnly` | boolean | false | Only validate, don't output |
@@ -545,7 +599,8 @@ markdown-transclusion --help
 Key options:
 - `-o, --output` - Output file (default: stdout)
 - `-b, --base-path` - Base directory for references
-- `--variables` - Variable substitutions (key=value)
+- `--variables` - Variable substitutions for file references (key=value)
+- `--template-variables` - Variable substitutions within content (key=value or JSON)
 - `-s, --strict` - Exit on any error
 - `--validate-only` - Check references without output
 - `--strip-frontmatter` - Remove YAML/TOML frontmatter from files
