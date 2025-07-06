@@ -2,13 +2,13 @@ services:
   # Node 18.x testing
   test-node18:
     build:
-      context: .
-      dockerfile: Dockerfile.test
+      context: ../..
+      dockerfile: test/docker/Dockerfile.test
       args:
         NODE_VERSION: "18"
     working_dir: /app
     volumes:
-      - .:/app
+      - ../..:/app
       - /app/node_modules
     environment:
       - NODE_ENV=test
@@ -17,13 +17,13 @@ services:
   # Node 20.x testing  
   test-node20:
     build:
-      context: .
-      dockerfile: Dockerfile.test
+      context: ../..
+      dockerfile: test/docker/Dockerfile.test
       args:
         NODE_VERSION: "20"
     working_dir: /app
     volumes:
-      - .:/app
+      - ../..:/app
       - /app/node_modules
     environment:
       - NODE_ENV=test
@@ -32,13 +32,13 @@ services:
   # Node 22.x testing
   test-node22:
     build:
-      context: .
-      dockerfile: Dockerfile.test
+      context: ../..
+      dockerfile: test/docker/Dockerfile.test
       args:
         NODE_VERSION: "22"
     working_dir: /app
     volumes:
-      - .:/app
+      - ../..:/app
       - /app/node_modules
     environment:
       - NODE_ENV=test
@@ -47,13 +47,13 @@ services:
   # Linting (using Node 20.x)
   lint:
     build:
-      context: .
-      dockerfile: Dockerfile.test
+      context: ../..
+      dockerfile: test/docker/Dockerfile.test
       args:
         NODE_VERSION: "20"
     working_dir: /app
     volumes:
-      - .:/app
+      - ../..:/app
       - /app/node_modules
     environment:
       - NODE_ENV=test
@@ -62,13 +62,13 @@ services:
   # Type checking (using Node 20.x)
   type-check:
     build:
-      context: .
-      dockerfile: Dockerfile.test
+      context: ../..
+      dockerfile: test/docker/Dockerfile.test
       args:
         NODE_VERSION: "20"
     working_dir: /app
     volumes:
-      - .:/app
+      - ../..:/app
       - /app/node_modules
     environment:
       - NODE_ENV=test
