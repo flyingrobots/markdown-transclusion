@@ -3,6 +3,14 @@
   "version": "1.1.2",
   "description": "Stream-based library for resolving Obsidian-style transclusion references in Markdown documents",
   "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
   "bin": {
     "markdown-transclusion": "dist/cli.js"
   },
@@ -20,19 +28,19 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
-    "lint": "eslint src --ext .ts",
-    "lint:fix": "eslint src --ext .ts --fix",
+    "lint": "eslint src",
+    "lint:fix": "eslint src --fix",
     "type-check": "tsc --noEmit",
-    "clean": "rm -rf dist coverage",
-    "test:docker": "docker compose -f docker-compose.test.yml run --rm test-node20",
+    "clean": "npx rimraf dist coverage",
+    "test:docker": "docker compose -f test/docker/docker-compose.test.yml run --rm test-node20",
     "test:all-versions": "./scripts/pre-push-test.sh",
-    "test:node18": "docker compose -f docker-compose.test.yml run --rm test-node18",
-    "test:node20": "docker compose -f docker-compose.test.yml run --rm test-node20", 
-    "test:node22": "docker compose -f docker-compose.test.yml run --rm test-node22",
-    "lint:docker": "docker compose -f docker-compose.test.yml run --rm lint",
+    "test:node18": "docker compose -f test/docker/docker-compose.test.yml run --rm test-node18",
+    "test:node20": "docker compose -f test/docker/docker-compose.test.yml run --rm test-node20", 
+    "test:node22": "docker compose -f test/docker/docker-compose.test.yml run --rm test-node22",
+    "lint:docker": "docker compose -f test/docker/docker-compose.test.yml run --rm lint",
     "preversion": "git diff --quiet && git diff --cached --quiet && git branch --show-current | grep -q '^main$' || (echo 'Error: npm version requires clean main branch' && exit 1)",
     "prepublishOnly": "npm run clean && npm run build && npm test",
-    "prepare": "husky"
+    "prepare": "husky install"
   },
   "keywords": [
     "markdown",
@@ -40,9 +48,11 @@
     "obsidian",
     "documentation",
     "stream",
-    "transform"
+    "transform",
+    "modular",
+    "docs"
   ],
-  "author": "flyingrobots",
+  "author": "J. Kirby Ross <james@flyingrobots.dev> (https://github.com/flyingrobots)",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/flyingrobots/markdown-transclusion.git"
@@ -56,17 +66,18 @@
   },
   "license": "MIT",
   "devDependencies": {
-    "@eslint/js": "^9.27.0",
+    "@eslint/js": "^8.57.0",
     "@types/jest": "^29.5.14",
     "@types/node": "^22.15.21",
     "@typescript-eslint/eslint-plugin": "^8.32.1",
     "@typescript-eslint/parser": "^8.32.1",
     "conventional-changelog-cli": "^5.0.0",
-    "eslint": "^9.27.0",
+    "eslint": "^8.57.0",
     "fast-check": "^3.15.0",
     "husky": "^9.1.7",
     "jest": "^29.7.0",
     "ts-jest": "^29.3.4",
-    "typescript": "^5.8.3"
+    "typescript": "^5.8.3",
+    "rimraf": "^6.0.1"
   }
 }
