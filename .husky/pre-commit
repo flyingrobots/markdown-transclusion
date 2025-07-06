@@ -1,1 +1,2 @@
-npm test
+npm lint:fix
+npm type-check
