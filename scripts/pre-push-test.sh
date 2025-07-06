@@ -38,31 +38,48 @@ echo
 run_labeled() {
     local label="$1"
     local command="$2"
-    local color="$3"
     
-    # Run command and prefix each line with label
-    $command 2>&1 | sed "s/^/${color}[${label}]${NC} /" &
+    # Run command and prefix each line with label (no colors to avoid escape issues)
+    $command 2>&1 | while IFS= read -r line; do
+        echo "[$label] $line"
+    done &
     return $!
 }
+
+# Cleanup function to kill all background processes
+cleanup_processes() {
+    print_warning "Cleaning up background processes..."
+    if [ -n "$LINT_PID" ]; then kill $LINT_PID 2>/dev/null || true; fi
+    if [ -n "$TYPECHECK_PID" ]; then kill $TYPECHECK_PID 2>/dev/null || true; fi
+    if [ -n "$NODE18_PID" ]; then kill $NODE18_PID 2>/dev/null || true; fi
+    if [ -n "$NODE20_PID" ]; then kill $NODE20_PID 2>/dev/null || true; fi
+    if [ -n "$NODE22_PID" ]; then kill $NODE22_PID 2>/dev/null || true; fi
+    
+    # Also clean up any running Docker containers
+    docker compose -f test/docker/docker-compose.test.yml down 2>/dev/null || true
+}
+
+# Set up trap to cleanup on script exit
+trap cleanup_processes EXIT INT TERM
 
 # Run all checks in parallel with labeled streaming output
 print_status "Running all checks in parallel with streaming output..."
 echo
 
 # Start all processes in background with labeled output
-run_labeled "lint" "docker compose -f test/docker/docker-compose.test.yml run --rm -T lint" "$BLUE"
+run_labeled "lint" "docker compose -f test/docker/docker-compose.test.yml run --rm -T lint"
 LINT_PID=$!
 
-run_labeled "typecheck" "docker compose -f test/docker/docker-compose.test.yml run --rm -T type-check" "$YELLOW"
+run_labeled "typecheck" "docker compose -f test/docker/docker-compose.test.yml run --rm -T type-check"
 TYPECHECK_PID=$!
 
-run_labeled "node18" "docker compose -f test/docker/docker-compose.test.yml run --rm -T test-node18" "$GREEN"
+run_labeled "node18" "docker compose -f test/docker/docker-compose.test.yml run --rm -T test-node18"
 NODE18_PID=$!
 
-run_labeled "node20" "docker compose -f test/docker/docker-compose.test.yml run --rm -T test-node20" "$GREEN"
+run_labeled "node20" "docker compose -f test/docker/docker-compose.test.yml run --rm -T test-node20"
 NODE20_PID=$!
 
-run_labeled "node22" "docker compose -f test/docker/docker-compose.test.yml run --rm -T test-node22" "$GREEN"
+run_labeled "node22" "docker compose -f test/docker/docker-compose.test.yml run --rm -T test-node22"
 NODE22_PID=$!
 
 echo
