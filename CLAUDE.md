@@ -1,5 +1,24 @@
 # OPERATION "INTUITIVE API" 🎯
 
+## 📋 SITREP - 2025-07-06
+
+### Release v1.2.0 Complete ✅
+- **Published to npm**: v1.2.0 live at https://www.npmjs.com/package/markdown-transclusion/v/1.2.0
+- **GitHub Release**: Automatically created by GitHub Actions
+- **Major Features Released**:
+  - Template Variable Substitution
+  - Plugin System Architecture  
+  - Enhanced Error Recovery with fuzzy matching
+  - Heading Range Extraction
+  - CLI Output Control (--verbose, --porcelain, --progress)
+  - Docker Development Environment
+
+### 🚀 Key Discovery: Automated Release Process
+- GitHub Actions automatically publishes to npm when tags matching `v*` are pushed
+- No manual `npm publish` needed - just push the tag!
+- Created RELEASING.md with complete workflow documentation
+- Future releases simplified: branch → CHANGELOG → version → PR → merge → tag → done!
+
 ## 🚨 TOP PRIORITY - LIVE USER FEEDBACK (2025-07-04)
 
 **CRITICAL:** Real users are confused about the way our code works. Fix it NOW.
