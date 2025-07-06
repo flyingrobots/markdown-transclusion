@@ -34,33 +34,40 @@ fi
 print_status "Running pre-push checks..."
 echo
 
-# Run all checks in parallel
-print_status "Running all checks in parallel..."
+# Function to run a command in background with labeled output
+run_labeled() {
+    local label="$1"
+    local command="$2"
+    local color="$3"
+    
+    # Run command and prefix each line with label
+    $command 2>&1 | sed "s/^/${color}[${label}]${NC} /" &
+    return $!
+}
+
+# Run all checks in parallel with labeled streaming output
+print_status "Running all checks in parallel with streaming output..."
 echo
 
-# Start all processes in background
-echo "Starting lint check..."
-docker compose -f test/docker/docker-compose.test.yml run --rm -T lint > /tmp/lint.log 2>&1 &
+# Start all processes in background with labeled output
+run_labeled "lint" "docker compose -f test/docker/docker-compose.test.yml run --rm -T lint" "$BLUE"
 LINT_PID=$!
 
-echo "Starting type check..."
-docker compose -f test/docker/docker-compose.test.yml run --rm -T type-check > /tmp/typecheck.log 2>&1 &
+run_labeled "typecheck" "docker compose -f test/docker/docker-compose.test.yml run --rm -T type-check" "$YELLOW"
 TYPECHECK_PID=$!
 
-echo "Starting Node 18 tests..."
-docker compose -f test/docker/docker-compose.test.yml run --rm -T test-node18 > /tmp/node18.log 2>&1 &
+run_labeled "node18" "docker compose -f test/docker/docker-compose.test.yml run --rm -T test-node18" "$GREEN"
 NODE18_PID=$!
 
-echo "Starting Node 20 tests..."
-docker compose -f test/docker/docker-compose.test.yml run --rm -T test-node20 > /tmp/node20.log 2>&1 &
+run_labeled "node20" "docker compose -f test/docker/docker-compose.test.yml run --rm -T test-node20" "$GREEN"
 NODE20_PID=$!
 
-echo "Starting Node 22 tests..."
-docker compose -f test/docker/docker-compose.test.yml run --rm -T test-node22 > /tmp/node22.log 2>&1 &
+run_labeled "node22" "docker compose -f test/docker/docker-compose.test.yml run --rm -T test-node22" "$GREEN"
 NODE22_PID=$!
 
 echo
 print_status "Waiting for all checks to complete..."
+echo
 
 # Wait for all processes and check results
 FAILED=0
@@ -71,9 +78,6 @@ if [ $LINT_RESULT -eq 0 ]; then
     print_success "Linting passed"
 else
     print_error "Linting failed"
-    echo "----------------------------------------"
-    cat /tmp/lint.log
-    echo "----------------------------------------"
     FAILED=1
 fi
 
@@ -83,9 +87,6 @@ if [ $TYPECHECK_RESULT -eq 0 ]; then
     print_success "Type checking passed"
 else
     print_error "Type checking failed"
-    echo "----------------------------------------"
-    cat /tmp/typecheck.log
-    echo "----------------------------------------"
     FAILED=1
 fi
 
@@ -95,9 +96,6 @@ if [ $NODE18_RESULT -eq 0 ]; then
     print_success "Tests passed on Node.js 18.x"
 else
     print_error "Tests failed on Node.js 18.x"
-    echo "----------------------------------------"
-    cat /tmp/node18.log
-    echo "----------------------------------------"
     FAILED=1
 fi
 
@@ -107,9 +105,6 @@ if [ $NODE20_RESULT -eq 0 ]; then
     print_success "Tests passed on Node.js 20.x"
 else
     print_error "Tests failed on Node.js 20.x"
-    echo "----------------------------------------"
-    cat /tmp/node20.log
-    echo "----------------------------------------"
     FAILED=1
 fi
 
@@ -119,14 +114,8 @@ if [ $NODE22_RESULT -eq 0 ]; then
     print_success "Tests passed on Node.js 22.x"
 else
     print_error "Tests failed on Node.js 22.x"
-    echo "----------------------------------------"
-    cat /tmp/node22.log
-    echo "----------------------------------------"
     FAILED=1
 fi
-
-# Clean up temp files
-rm -f /tmp/lint.log /tmp/typecheck.log /tmp/node18.log /tmp/node20.log /tmp/node22.log
 
 if [ $FAILED -eq 1 ]; then
     exit 1

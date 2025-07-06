@@ -1,75 +1,81 @@
+# Docker Compose configuration for testing markdown-transclusion
+# Uses project-specific naming to avoid conflicts and enable easy cleanup
+
 services:
   # Node 18.x testing
   test-node18:
-    build:
-      context: ../..
-      dockerfile: test/docker/Dockerfile.test
-      args:
-        NODE_VERSION: "18"
+    image: node:18-alpine
+    container_name: markdown-transclusion-test-node18
     working_dir: /app
     volumes:
       - ../..:/app
-      - /app/node_modules
+      - markdown-transclusion-node-modules:/app/node_modules
     environment:
       - NODE_ENV=test
-    command: npm test
+    command: sh -c "npm ci && npm test"
+    networks:
+      - markdown-transclusion-test
 
   # Node 20.x testing  
   test-node20:
-    build:
-      context: ../..
-      dockerfile: test/docker/Dockerfile.test
-      args:
-        NODE_VERSION: "20"
+    image: node:20-alpine
+    container_name: markdown-transclusion-test-node20
     working_dir: /app
     volumes:
       - ../..:/app
-      - /app/node_modules
+      - markdown-transclusion-node-modules:/app/node_modules
     environment:
       - NODE_ENV=test
-    command: npm test
+    command: sh -c "npm ci && npm test"
+    networks:
+      - markdown-transclusion-test
 
   # Node 22.x testing
   test-node22:
-    build:
-      context: ../..
-      dockerfile: test/docker/Dockerfile.test
-      args:
-        NODE_VERSION: "22"
+    image: node:22-alpine
+    container_name: markdown-transclusion-test-node22
     working_dir: /app
     volumes:
       - ../..:/app
-      - /app/node_modules
+      - markdown-transclusion-node-modules:/app/node_modules
     environment:
       - NODE_ENV=test
-    command: npm test
+    command: sh -c "npm ci && npm test"
+    networks:
+      - markdown-transclusion-test
 
   # Linting (using Node 20.x)
   lint:
-    build:
-      context: ../..
-      dockerfile: test/docker/Dockerfile.test
-      args:
-        NODE_VERSION: "20"
+    image: node:20-alpine
+    container_name: markdown-transclusion-test-lint
     working_dir: /app
     volumes:
       - ../..:/app
-      - /app/node_modules
+      - markdown-transclusion-node-modules:/app/node_modules
     environment:
       - NODE_ENV=test
-    command: npm run lint
+    command: sh -c "npm ci && npm run lint"
+    networks:
+      - markdown-transclusion-test
 
   # Type checking (using Node 20.x)
   type-check:
-    build:
-      context: ../..
-      dockerfile: test/docker/Dockerfile.test
-      args:
-        NODE_VERSION: "20"
+    image: node:20-alpine
+    container_name: markdown-transclusion-test-typecheck
     working_dir: /app
     volumes:
       - ../..:/app
-      - /app/node_modules
+      - markdown-transclusion-node-modules:/app/node_modules
     environment:
       - NODE_ENV=test
-    command: npm run type-check
+    command: sh -c "npm ci && npm run type-check"
+    networks:
+      - markdown-transclusion-test
+
+volumes:
+  markdown-transclusion-node-modules:
+    name: markdown-transclusion-node-modules
+
+networks:
+  markdown-transclusion-test:
+    name: markdown-transclusion-test
