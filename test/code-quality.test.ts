@@ -181,7 +181,9 @@ describe('Code Quality Checks', () => {
     // Save report to file
     try {
       writeFileSync(reportPath, JSON.stringify(report, null, 2));
-      console.warn(`\nCode quality report saved to: ${relative(projectRoot, reportPath)}`);
+      if (process.env.SHOW_CODE_QUALITY_OUTPUT === 'true') {
+        console.warn(`\nCode quality report saved to: ${relative(projectRoot, reportPath)}`);
+      }
     } catch (error) {
       console.error('Failed to save code quality report:', error);
     }
@@ -194,8 +196,9 @@ describe('Code Quality Checks', () => {
    */
   function displaySummary(results: ScanResult[]): void {
     const hasIssues = results.some(r => r.matches.length > 0);
+    const showOutput = process.env.SHOW_CODE_QUALITY_OUTPUT === 'true';
     
-    if (hasIssues) {
+    if (hasIssues && showOutput) {
       console.warn('\n=== CODE QUALITY SUMMARY ===');
       console.warn(`Scanned paths: ${scanPaths.map(p => relative(projectRoot, p)).join(', ')}`);
       console.warn('');
