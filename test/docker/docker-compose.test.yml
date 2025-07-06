@@ -12,7 +12,7 @@ services:
       - markdown-transclusion-node-modules-18:/app/node_modules
     environment:
       - NODE_ENV=test
-    command: sh -c "npm ci && npm test"
+    command: sh -c "npm ci && npm run build && npm run test:fast"
     networks:
       - markdown-transclusion-test
 
@@ -26,7 +26,7 @@ services:
       - markdown-transclusion-node-modules-20:/app/node_modules
     environment:
       - NODE_ENV=test
-    command: sh -c "npm ci && npm test"
+    command: sh -c "npm ci && npm run build && npm run test:fast"
     networks:
       - markdown-transclusion-test
 
@@ -40,7 +40,7 @@ services:
       - markdown-transclusion-node-modules-22:/app/node_modules
     environment:
       - NODE_ENV=test
-    command: sh -c "npm ci && npm test"
+    command: sh -c "npm ci && npm run build && npm run test:fast"
     networks:
       - markdown-transclusion-test
 
@@ -72,6 +72,20 @@ services:
     networks:
       - markdown-transclusion-test
 
+  # Code quality checks (using Node 20.x)
+  code-quality:
+    image: node:20-alpine
+    container_name: markdown-transclusion-test-code-quality
+    working_dir: /app
+    volumes:
+      - ../..:/app
+      - markdown-transclusion-node-modules-quality:/app/node_modules
+    environment:
+      - NODE_ENV=test
+    command: sh -c "npm ci && npm run code-quality"
+    networks:
+      - markdown-transclusion-test
+
 volumes:
   markdown-transclusion-node-modules-18:
     name: markdown-transclusion-node-modules-18
@@ -83,6 +97,8 @@ volumes:
     name: markdown-transclusion-node-modules-lint
   markdown-transclusion-node-modules-typecheck:
     name: markdown-transclusion-node-modules-typecheck
+  markdown-transclusion-node-modules-quality:
+    name: markdown-transclusion-node-modules-quality
 
 networks:
   markdown-transclusion-test:

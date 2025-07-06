@@ -13,6 +13,10 @@ module.exports = {
     },
   },
   testMatch: ['<rootDir>/test/**/*.(test|spec).(ts|js)'],
+  testPathIgnorePatterns: [
+    '/node_modules/',
+    '/test/code-quality.test.ts'
+  ],
   coveragePathIgnorePatterns: [
     '/node_modules/',
     '/test/helpers/',
