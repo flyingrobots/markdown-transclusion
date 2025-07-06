@@ -11,7 +11,9 @@ import {
   OutputMode, 
   type ProcessingStats,
   DefaultFormatter,
-  VerboseFormatter 
+  VerboseFormatter,
+  PorcelainFormatter,
+  ProgressFormatter 
 } from './outputFormatter';
 import { LogLevel } from './logger';
 import {
@@ -47,9 +49,20 @@ export class EnhancedOutputFormatter implements OutputFormatter {
     );
     
     // Use existing formatters as base
-    this.baseFormatter = mode === OutputMode.VERBOSE
-      ? new VerboseFormatter(stderr, stdout, logLevel, strict)
-      : new DefaultFormatter(stderr, stdout, logLevel, strict);
+    switch (mode) {
+      case OutputMode.VERBOSE:
+        this.baseFormatter = new VerboseFormatter(stderr, stdout, logLevel, strict);
+        break;
+      case OutputMode.PORCELAIN:
+        this.baseFormatter = new PorcelainFormatter(stderr, stdout, logLevel, strict);
+        break;
+      case OutputMode.PROGRESS:
+        this.baseFormatter = new ProgressFormatter(stderr, stdout, logLevel, strict);
+        break;
+      default:
+        this.baseFormatter = new DefaultFormatter(stderr, stdout, logLevel, strict);
+        break;
+    }
   }
 
   async init(): Promise<void> {
@@ -80,10 +93,19 @@ export class EnhancedOutputFormatter implements OutputFormatter {
     // First, call the base formatter for backward compatibility
     this.baseFormatter.onError(error);
     
-    // Then, add enhanced error information asynchronously
-    this.displayEnhancedError(error).catch(() => {
-      // Ignore enhancement errors to maintain stability
-    });
+    // Only show enhanced suggestions if the error would have been displayed
+    // Check if the base formatter would show this error based on log level
+    const baseFormatter = this.baseFormatter as any;
+    const isStrict = baseFormatter.strict || false;
+    const logLevel = baseFormatter.logLevel || LogLevel.INFO;
+    const errorLevel = isStrict ? LogLevel.ERROR : LogLevel.WARN;
+    
+    if (logLevel >= errorLevel) {
+      // Then, add enhanced error information asynchronously
+      this.displayEnhancedError(error).catch(() => {
+        // Ignore enhancement errors to maintain stability
+      });
+    }
   }
 
   onWarning(message: string): void {

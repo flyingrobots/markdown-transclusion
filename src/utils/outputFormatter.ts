@@ -125,11 +125,15 @@ export class DefaultFormatter extends BaseFormatter {
   
   onError(error: TransclusionError): void {
     const prefix = this.strict ? 'ERROR' : 'WARN';
-    this.errorStream.write(`${prefix}: ${error.message}`);
-    if (error.path) {
-      this.errorStream.write(` in ${error.path}`);
+    const level = this.strict ? LogLevel.ERROR : LogLevel.WARN;
+    
+    if (this.logLevel >= level) {
+      this.errorStream.write(`${prefix}: ${error.message}`);
+      if (error.path) {
+        this.errorStream.write(` in ${error.path}`);
+      }
+      this.errorStream.write('\n');
     }
-    this.errorStream.write('\n');
   }
   
   onWarning(_message: string): void {

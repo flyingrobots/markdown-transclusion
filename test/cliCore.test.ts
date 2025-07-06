@@ -293,10 +293,10 @@ describe('cliCore', () => {
         exit: mockExit
       });
       
-      // In default mode, errors are shown in simple format
-      expect(stderrData.join('')).toContain('Error: Missing reference');
-      expect(stderrData.join('')).toContain('in file1.md:10');
-      expect(stderrData.join('')).toContain('Error: File not found');
+      // In default mode, errors are shown as warnings
+      expect(stderrData.join('')).toContain('WARN: Missing reference');
+      expect(stderrData.join('')).toContain('in file1.md');
+      expect(stderrData.join('')).toContain('WARN: File not found');
       expect(stderrData.join('')).toContain('in file2.md');
       expect(mockExit).not.toHaveBeenCalled();
     });
@@ -323,8 +323,8 @@ describe('cliCore', () => {
         exit: mockExit
       });
       
-      // In default mode with strict, just the error is shown
-      expect(stderrData.join('')).toContain('Error: Missing reference');
+      // In default mode with strict, errors are shown with ERROR prefix
+      expect(stderrData.join('')).toContain('ERROR: Missing reference');
       expect(mockExit).toHaveBeenCalledWith(1);
     });
     

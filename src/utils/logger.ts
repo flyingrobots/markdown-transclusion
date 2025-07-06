@@ -132,7 +132,14 @@ export class StreamLogger implements Logger {
     if (this.level >= LogLevel.ERROR) {
       this.errorStream.write(this.format(LogLevel.ERROR, message) + '\n');
       if (data) {
-        this.errorStream.write(JSON.stringify(data, null, 2) + '\n');
+        if (data instanceof Error) {
+          this.errorStream.write(`Error: ${data.message}\n`);
+          if (data.stack) {
+            this.errorStream.write(`${data.stack}\n`);
+          }
+        } else {
+          this.errorStream.write(JSON.stringify(data, null, 2) + '\n');
+        }
       }
     }
   }
@@ -141,7 +148,14 @@ export class StreamLogger implements Logger {
     if (this.level >= LogLevel.WARN) {
       this.errorStream.write(this.format(LogLevel.WARN, message) + '\n');
       if (data) {
-        this.errorStream.write(JSON.stringify(data, null, 2) + '\n');
+        if (data instanceof Error) {
+          this.errorStream.write(`Error: ${data.message}\n`);
+          if (data.stack) {
+            this.errorStream.write(`${data.stack}\n`);
+          }
+        } else {
+          this.errorStream.write(JSON.stringify(data, null, 2) + '\n');
+        }
       }
     }
   }
@@ -150,7 +164,14 @@ export class StreamLogger implements Logger {
     if (this.level >= LogLevel.INFO) {
       this.outStream.write(this.format(LogLevel.INFO, message) + '\n');
       if (data) {
-        this.outStream.write(JSON.stringify(data, null, 2) + '\n');
+        if (data instanceof Error) {
+          this.outStream.write(`Error: ${data.message}\n`);
+          if (data.stack) {
+            this.outStream.write(`${data.stack}\n`);
+          }
+        } else {
+          this.outStream.write(JSON.stringify(data, null, 2) + '\n');
+        }
       }
     }
   }
@@ -159,7 +180,14 @@ export class StreamLogger implements Logger {
     if (this.level >= LogLevel.DEBUG) {
       this.outStream.write(this.format(LogLevel.DEBUG, message) + '\n');
       if (data) {
-        this.outStream.write(JSON.stringify(data, null, 2) + '\n');
+        if (data instanceof Error) {
+          this.outStream.write(`Error: ${data.message}\n`);
+          if (data.stack) {
+            this.outStream.write(`${data.stack}\n`);
+          }
+        } else {
+          this.outStream.write(JSON.stringify(data, null, 2) + '\n');
+        }
       }
     }
   }

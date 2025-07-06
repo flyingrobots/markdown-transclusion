@@ -104,8 +104,8 @@ describe('CLI Output Modes Integration', () => {
         exit: mockExit
       });
       
-      // Error should appear on stderr
-      expect(mockStderr.getData()).toContain('Error: File not found');
+      // Error should appear on stderr as warning in non-strict mode
+      expect(mockStderr.getData()).toContain('WARN: File not found');
       expect(mockStderr.getData()).toContain('in missing.md');
     });
   });

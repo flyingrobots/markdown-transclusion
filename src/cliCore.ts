@@ -218,6 +218,10 @@ export async function runCli(options: CliOptions): Promise<void> {
     const errors = transform.errors;
     // In strict mode, we should exit with error if there were any errors
     if (errors.length > 0 && transclusionOptions.strict) {
+      // Display errors before exiting
+      errors.forEach(error => {
+        formatter.onError(error);
+      });
       await gracefulExit(1, exit);
       return;
     }
@@ -332,6 +336,13 @@ export async function runCli(options: CliOptions): Promise<void> {
       }
       
       formatter.onProcessingComplete(stats);
+      
+      // Display accumulated errors
+      if (errors.length > 0 && !transclusionOptions.strict) {
+        errors.forEach(error => {
+          formatter.onError(error);
+        });
+      }
     }
     
     // Cleanup plugin system

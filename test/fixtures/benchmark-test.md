@@ -2,10 +2,10 @@
 
 This is a test file for benchmarking.
 
-![[test-files/simple-include.md]]
+![[test/fixtures/simple-include.md]]
 
 More content here.
 
-![[test-files/nested/deep-include.md]]
+![[test/fixtures/nested/deep-include.md]]
 
 Final content.
