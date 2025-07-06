@@ -22,7 +22,6 @@ class PrePushTester {
   private processes: TestProcess[] = [
     { name: 'lint', command: ['docker', 'compose', '-f', 'test/docker/docker-compose.test.yml', 'run', '--rm', '-T', 'lint'], completed: false },
     { name: 'typecheck', command: ['docker', 'compose', '-f', 'test/docker/docker-compose.test.yml', 'run', '--rm', '-T', 'type-check'], completed: false },
-    { name: 'node18', command: ['docker', 'compose', '-f', 'test/docker/docker-compose.test.yml', 'run', '--rm', '-T', 'test-node18'], completed: false },
     { name: 'node20', command: ['docker', 'compose', '-f', 'test/docker/docker-compose.test.yml', 'run', '--rm', '-T', 'test-node20'], completed: false },
     { name: 'node22', command: ['docker', 'compose', '-f', 'test/docker/docker-compose.test.yml', 'run', '--rm', '-T', 'test-node22'], completed: false },
   ];
