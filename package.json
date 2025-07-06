@@ -37,7 +37,7 @@
     "test:node22": "docker compose -f test/docker/docker-compose.test.yml run --rm test-node22",
     "lint:docker": "docker compose -f test/docker/docker-compose.test.yml run --rm lint",
     "test:cleanup": "docker compose -f test/docker/docker-compose.test.yml down -v",
-    "preversion": "git diff --quiet && git diff --cached --quiet && git branch --show-current | grep -q '^main$' || (echo 'Error: npm version requires clean main branch' && exit 1)",
+    "preversion": "git diff --quiet && git diff --cached --quiet && (git branch --show-current | grep -q '^main$' || git branch --show-current | grep -q '^release/') || (echo 'Error: npm version requires clean main or release branch' && exit 1)",
     "prepublishOnly": "npm run clean && npm run build && npm test"
   },
   "keywords": [
