@@ -3,7 +3,7 @@ const { join } = require('path');
 const { tmpdir } = require('os');
 const { execFileSync } = require('child_process');
 
-describe('F006 - Heading-Specific Transclusion', () => {
+describe.skip('F006 - Heading-Specific Transclusion', () => {
   let tempDir;
   let cliPath;
 

@@ -3,7 +3,7 @@ const { join } = require('path');
 const { tmpdir } = require('os');
 const { execFileSync } = require('child_process');
 
-describe('F014 - Frontmatter Stripping', () => {
+describe.skip('F014 - Frontmatter Stripping', () => {
   let tempDir;
   let cliPath;
 

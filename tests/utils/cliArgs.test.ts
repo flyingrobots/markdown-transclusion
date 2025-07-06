@@ -344,7 +344,7 @@ describe('CLI Argument Parsing', () => {
     it('should return version string', () => {
       const version = getVersionText();
       expect(version).toContain('markdown-transclusion');
-      expect(version).toContain('1.0.0');
+      expect(version).toMatch(/\d+\.\d+\.\d+/); // Semantic version pattern
     });
   });
 });
