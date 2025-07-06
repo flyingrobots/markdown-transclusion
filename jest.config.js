@@ -12,11 +12,12 @@ module.exports = {
       statements: 60,
     },
   },
+  testMatch: ['<rootDir>/test/**/*.(test|spec).(ts|js)'],
   coveragePathIgnorePatterns: [
     '/node_modules/',
-    '/tests/helpers/',
-    '/tests/testUtils/',
-    '/tests/utils/',
-    '/tests/mocks/',
+    '/test/helpers/',
+    '/test/testUtils/',
+    '/test/utils/',
+    '/test/mocks/',
   ],
 };

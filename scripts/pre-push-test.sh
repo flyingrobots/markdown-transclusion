@@ -34,49 +34,103 @@ fi
 print_status "Running pre-push checks..."
 echo
 
-# Step 1: Lint
-print_status "Running ESLint..."
-echo "----------------------------------------"
-if docker compose -f test/docker/docker-compose.test.yml run --rm -T lint 2>&1; then
-    echo "----------------------------------------"
+# Run all checks in parallel
+print_status "Running all checks in parallel..."
+echo
+
+# Start all processes in background
+echo "Starting lint check..."
+docker compose -f test/docker/docker-compose.test.yml run --rm -T lint > /tmp/lint.log 2>&1 &
+LINT_PID=$!
+
+echo "Starting type check..."
+docker compose -f test/docker/docker-compose.test.yml run --rm -T type-check > /tmp/typecheck.log 2>&1 &
+TYPECHECK_PID=$!
+
+echo "Starting Node 18 tests..."
+docker compose -f test/docker/docker-compose.test.yml run --rm -T test-node18 > /tmp/node18.log 2>&1 &
+NODE18_PID=$!
+
+echo "Starting Node 20 tests..."
+docker compose -f test/docker/docker-compose.test.yml run --rm -T test-node20 > /tmp/node20.log 2>&1 &
+NODE20_PID=$!
+
+echo "Starting Node 22 tests..."
+docker compose -f test/docker/docker-compose.test.yml run --rm -T test-node22 > /tmp/node22.log 2>&1 &
+NODE22_PID=$!
+
+echo
+print_status "Waiting for all checks to complete..."
+
+# Wait for all processes and check results
+FAILED=0
+
+wait $LINT_PID
+LINT_RESULT=$?
+if [ $LINT_RESULT -eq 0 ]; then
     print_success "Linting passed"
 else
-    echo "----------------------------------------"
     print_error "Linting failed"
-    exit 1
-fi
-echo
-
-# Step 2: Type check
-print_status "Running TypeScript type check..."
-echo "----------------------------------------"
-if docker compose -f test/docker/docker-compose.test.yml run --rm -T type-check 2>&1; then
     echo "----------------------------------------"
+    cat /tmp/lint.log
+    echo "----------------------------------------"
+    FAILED=1
+fi
+
+wait $TYPECHECK_PID
+TYPECHECK_RESULT=$?
+if [ $TYPECHECK_RESULT -eq 0 ]; then
     print_success "Type checking passed"
 else
-    echo "----------------------------------------"
     print_error "Type checking failed"
+    echo "----------------------------------------"
+    cat /tmp/typecheck.log
+    echo "----------------------------------------"
+    FAILED=1
+fi
+
+wait $NODE18_PID
+NODE18_RESULT=$?
+if [ $NODE18_RESULT -eq 0 ]; then
+    print_success "Tests passed on Node.js 18.x"
+else
+    print_error "Tests failed on Node.js 18.x"
+    echo "----------------------------------------"
+    cat /tmp/node18.log
+    echo "----------------------------------------"
+    FAILED=1
+fi
+
+wait $NODE20_PID
+NODE20_RESULT=$?
+if [ $NODE20_RESULT -eq 0 ]; then
+    print_success "Tests passed on Node.js 20.x"
+else
+    print_error "Tests failed on Node.js 20.x"
+    echo "----------------------------------------"
+    cat /tmp/node20.log
+    echo "----------------------------------------"
+    FAILED=1
+fi
+
+wait $NODE22_PID
+NODE22_RESULT=$?
+if [ $NODE22_RESULT -eq 0 ]; then
+    print_success "Tests passed on Node.js 22.x"
+else
+    print_error "Tests failed on Node.js 22.x"
+    echo "----------------------------------------"
+    cat /tmp/node22.log
+    echo "----------------------------------------"
+    FAILED=1
+fi
+
+# Clean up temp files
+rm -f /tmp/lint.log /tmp/typecheck.log /tmp/node18.log /tmp/node20.log /tmp/node22.log
+
+if [ $FAILED -eq 1 ]; then
     exit 1
 fi
-echo
-
-# Step 3: Test against Node.js versions from CI matrix
-NODE_VERSIONS=("18" "20" "22")
-
-for version in "${NODE_VERSIONS[@]}"; do
-    print_status "Running tests on Node.js ${version}.x..."
-    echo "----------------------------------------"
-    if docker compose -f test/docker/docker-compose.test.yml run --rm -T "test-node${version}" 2>&1; then
-        echo "----------------------------------------"
-        print_success "Tests passed on Node.js ${version}.x"
-    else
-        echo "----------------------------------------"
-        print_error "Tests failed on Node.js ${version}.x"
-        print_error "Check the output above for specific test failures"
-        exit 1
-    fi
-    echo
-done
 
 # All checks passed
 echo
