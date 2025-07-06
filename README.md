@@ -1,51 +1,54 @@
-# markdown-transclusion
+# `markdown-transclusion`
 
-[![npm version](https://img.shields.io/npm/v/markdown-transclusion.svg)](https://www.npmjs.com/package/markdown-transclusion)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Node.js Version](https://img.shields.io/node/v/markdown-transclusion.svg)](https://nodejs.org)
+[![npm version](https://img.shields.io/npm/v/markdown-transclusion.svg)](https://www.npmjs.com/package/markdown-transclusion) • [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) • [![Node.js Version](https://img.shields.io/node/v/markdown-transclusion.svg)](https://nodejs.org)
 
-Stream-based library and CLI for resolving Obsidian-style transclusion references in Markdown documents.
+Stream-based library and CLI for resolving Obsidian-style transclusion references in Markdown documents, enabling modular documentation.
 
-## 🎉 What's New (Since v1.1.2)
+---
+## 🎉 What's New (Since `v1.1.2`)
 
 ### ✨ Template Variable Substitution in Content
 Now you can use `{{variables}}` within your transcluded content, not just in filenames!
 
+`template.md`:
 ```markdown
-<!-- template.md -->
 Welcome {{userName}}! Today is {{currentDate}}.
 Your account type is: {{accountType}}
+```
 
-<!-- Usage -->
-markdown-transclusion template.md --template-variables "userName=John,currentDate=2025-07-06,accountType=premium"
+You can use `--template-variables "key=value,key2=value2`, like so:
+```bash
+$ markdown-transclusion template.md --template-variables "userName=John,currentDate=2025-07-06,accountType=premium"
+```
 
-<!-- Output -->
+And you'll get:
+```
 Welcome John! Today is 2025-07-06.
 Your account type is: premium
 ```
+#### **Key features**
 
-**Key features:**
-- Supports all JavaScript types (strings, numbers, booleans, null, undefined, Date objects)
+- Supports all JavaScript types (strings, numbers, booleans, `null`, `undefined`, `Date` objects)
 - Function values are called dynamically: `getDate: () => new Date().toISOString()`
 - Preserves unmatched variables when no value is provided
 - Works seamlessly with file transclusion and all existing features
 
 ### 🔧 Improved Error Handling
+
 - Standardized error/warning output format (`WARN:` and `ERROR:` prefixes)
 - Better log level support - warnings properly suppressed when `--log-level ERROR`
 - Enhanced error messages with intelligent suggestions remain fully functional
 
 ### 🐛 Bug Fixes
+
 - Fixed TypeScript compilation errors and missing exports
 - Resolved all ESLint errors for clean CI/CD builds
 - Corrected output format inconsistencies between strict and non-strict modes
 
-See the [CHANGELOG](./CHANGELOG.md) for complete details.
+### See the [CHANGELOG](./CHANGELOG.md) for complete details.
 
 ---
-
 ## Overview
-
 `markdown-transclusion` processes Markdown files containing transclusion syntax (`![[filename]]`) and resolves these references by including the content of referenced files. This enables modular documentation workflows where content can be composed from reusable components.
 
 ### High-Level System Flow
@@ -62,7 +65,6 @@ graph TD
 ```
 
 ### Detailed Processing Example
-
 ```mermaid
 graph LR
     A["📄 main.md<br/>![[header]]<br/>![[content]]"] --> B["markdown-transclusion"]
@@ -75,7 +77,7 @@ graph LR
 ```
 
 ### Stream-Based API Flow
-
+`markdown-transclusion` uses streaming APIs, which means it can handle large files, no problems.
 ```mermaid
 graph LR
     subgraph "Input"
@@ -101,11 +103,7 @@ graph LR
     style O2 fill:#ffccbc
     style O3 fill:#e3f2fd
 ```
-
-Designed for the Universal Charter project's multilingual documentation pipeline, it provides reliable, stream-based processing suitable for CI/CD integration.
-
 ## Features
-
 ✅ **Recursive transclusion** - Include files within files with automatic depth limiting  
 ✅ **Circular reference detection** - Prevents infinite loops with clear error reporting
 ✅ **Heading extraction** - Include specific sections using `![[file#heading]]` syntax  
@@ -120,9 +118,7 @@ Designed for the Universal Charter project's multilingual documentation pipeline
 ✅ **Enhanced error recovery** - Intelligent suggestions with fuzzy matching and "did you mean?" prompts  
 ✅ **Plugin system** - Extensible architecture for custom content transformations  
 ✅ **Zero dependencies** - No runtime dependencies for security and simplicity
-
 ## Installation
-
 ```bash
 # Global CLI installation
 npm install -g markdown-transclusion
@@ -133,11 +129,8 @@ npm install markdown-transclusion
 # Or use directly with npx
 npx markdown-transclusion --help
 ```
-
 ## Quick Start
-
 ### CLI Usage
-
 ```bash
 # Process a single file
 markdown-transclusion input.md
@@ -165,11 +158,8 @@ markdown-transclusion input.md | pandoc -o output.pdf
 
 # ⚠️ On Windows, use Git Bash or PowerShell. CMD can't handle the pipework.
 ```
-
 ### Plugin System
-
 Extend functionality with custom plugins:
-
 ```bash
 # Load plugins from files
 markdown-transclusion input.md --plugins ./my-plugin.js,./another-plugin.js
@@ -185,7 +175,6 @@ markdown-transclusion input.md --plugins builtin
 ```
 
 Create custom plugins:
-
 ```javascript
 // my-plugin.js
 module.exports = {
@@ -206,9 +195,7 @@ module.exports = {
 ```
 
 ### Output Control Modes
-
 Control output verbosity with Unix-style flags:
-
 ```bash
 # Default: "Silence is golden" - only errors shown
 markdown-transclusion input.md > output.md
@@ -246,9 +233,7 @@ markdown-transclusion doc.md --progress | pandoc -o output.pdf
 # Save both content and logs
 markdown-transclusion doc.md --verbose > content.md 2> process.log
 ```
-
 ### Example
-
 Given these files:
 
 `main.md`:
@@ -284,9 +269,7 @@ Our tool supports transclusion, making documentation maintenance easier.
 ![[api/endpoints]]
 <!-- Error: File not found: api/endpoints -->
 ```
-
 ### Programmatic Usage
-
 ```javascript
 import { processLine, createTransclusionStream } from 'markdown-transclusion';
 import { createReadStream, createWriteStream } from 'fs';
@@ -316,64 +299,90 @@ if (stream.errors.length > 0) {
   console.error('Transclusion errors:', stream.errors);
 }
 ```
-
 ## Transclusion Syntax
-
 ### Basic Syntax
 
-| Syntax | Description | Example Output |
-|--------|-------------|----------------|
-| `![[filename]]` | Include entire file | Contents of `filename.md` |
-| `![[folder/file]]` | Include file from folder | Contents of `folder/file.md` |
-| `![[file#heading]]` | Include specific section | Content under `# heading` until next heading |
-| `![[file#start:end]]` | Include heading range | Content from `# start` to `# end` |
-| `![[file#What We Don't Talk About]]` | Include section with spaces | Content under heading with spaces |
-| `![[file-{{var}}]]` | Variable substitution | With `var=en`: contents of `file-en.md` |
-
+| Syntax                               | Description                 | Example Output                               |
+| ------------------------------------ | --------------------------- | -------------------------------------------- |
+| `![[filename]]`                      | Include entire file         | Contents of `filename.md`                    |
+| `![[folder/file]]`                   | Include file from folder    | Contents of `folder/file.md`                 |
+| `![[file#heading]]`                  | Include specific section    | Content under `# heading` until next heading |
+| `![[file#start:end]]`                | Include heading range       | Content from `# start` to `# end`            |
+| `![[file#What We Don't Talk About]]` | Include section with spaces | Content under heading with spaces            |
+| `![[file-{{var}}]]`                  | Variable substitution       | With `var=en`: contents of `file-en.md`      |
 ### Advanced Examples
 
+#### Nested Transclusion
+If chapter1.md contains `![[section1]]`, it will be fully resolved:
 ```markdown
-<!-- Nested transclusion -->
-![[chapter1]]  <!-- If chapter1.md contains ![[section1]], it will be included -->
+![[chapter1]]
+```
+#### Multiple Variables
+Given `lang=es, version=2`:
+```
+![[docs/{{lang}}/intro-{{version}}]] → docs/es/intro-2.md
+```
 
-<!-- Multiple variables -->
-![[docs/{{lang}}/intro-{{version}}]]  <!-- Variables: lang=es, version=2 → docs/es/intro-2.md -->
-
-<!-- Template variables in content -->
+#### Markdown Templates
+With `--template-variables "name=John,balance=100" outputs: Hello John! Your balance is 100."`:
+```
 <!-- greeting.md contains: Hello {{name}}! Your balance is {{balance}}. -->
 ![[greeting]]
-<!-- With --template-variables "name=John,balance=100" outputs: Hello John! Your balance is 100. -->
+```
 
-<!-- Heading with spaces -->
+#### Transcluding Sections
+Target **specific sections** of another document with:
+```
 ![[architecture#System Overview]]
+```
 
-<!-- Heading ranges -->
-![[tutorial#Getting Started:Advanced Usage]]  <!-- Include from "Getting Started" to "Advanced Usage" -->
+Target **a range of sections** like so:
+```
+![[tutorial#Getting Started:Advanced Usage]]  
+```
 
-<!-- Combining file and template variables -->
-![[templates/email-{{lang}}]]  <!-- File variable -->
-<!-- If email-en.md contains: Dear {{customerName}}, your order {{orderId}} is ready. -->
-<!-- With --variables "lang=en" --template-variables "customerName=Alice,orderId=12345" -->
-<!-- Output: Dear Alice, your order 12345 is ready. -->
+#### Combine Variables and Transclusion
+Example: you have an email template, `email-{{lang}}.md`
 
-<!-- Error handling with intelligent suggestions -->
+`email-{{lang}}.md`:
+```
+![[templates/email-{{lang}}]]
+```
+
+`templates/email-en`:
+```
+Dear {{customerName}}, your order {{orderId}} is ready.
+```
+
+You can do this using the CLI tool and `--variables "lang=en" --template-variables "customerName=Alice,orderId=12345"` arguments:
+```
+ Output: Dear Alice, your order 12345 is ready.
+ ```
+
+#### Error Handling with Intelligent Suggestions
+Given _(note the typo)_:
+``` 
 ![[installaton.md]]
+```
+
+You'll see:
+```
 <!-- Error: File not found: installaton.md
 🔍 Suggestions:
    • installation.md (93% match) ← Did you mean this?
 💡 How to fix:
    • Check file path spelling
    • Replace with: installation.md -->
-
-<!-- Circular reference protection -->
-<!-- If A includes B, and B includes A, it will show: -->
+```
+#### Circular Reference Prevention
+If A includes B, and B includes A, it will show:
+```
 ![[/path/to/A.md]]
 <!-- Error: Circular reference detected: /path/to/A.md → /path/to/B.md → /path/to/A.md -->
 ```
 
-
+----
 ## Try It Out
-
 We include a complete example project:
 
 ```bash
@@ -390,11 +399,9 @@ npx markdown-transclusion main.md --variables "lang=es"
 
 See [examples/basic/README.md](./examples/basic/README.md) for a full walkthrough.
 
-
+----
 ## Real-World Use Cases
-
 ### 1. Multilingual Documentation
-
 Maintain documentation in multiple languages without duplication:
 
 ```mermaid
@@ -414,7 +421,6 @@ flowchart LR
     style G fill:#c8e6c9
     style H fill:#c8e6c9
 ```
-
 ```bash
 # template.md contains: ![[content-{{lang}}]]
 for lang in en es fr de zh; do
@@ -423,7 +429,6 @@ for lang in en es fr de zh; do
     --output docs/$lang/guide.md
 done
 ```
-
 ### 2. Version-Specific Documentation
 
 ```markdown
@@ -434,11 +439,9 @@ done
 ![[api/endpoints-{{version}}]]
 ![[migration-guide-{{prev_version}}-to-{{version}}]]
 ```
-
 ### 3. Modular Course Content
 
 ```markdown
-<!-- course.md -->
 # JavaScript Course
 
 ![[modules/intro]]
@@ -447,10 +450,10 @@ done
 ![[exercises/week-1]]
 ```
 
+----
 ### 4. Configuration Documentation
 
 ```markdown
-<!-- config-guide.md -->
 # Configuration Guide
 
 ## Development Settings
@@ -463,6 +466,7 @@ done
 ![[troubleshooting#Configuration Errors]]
 ```
 
+---
 ### 5. CI/CD Integration
 
 ```yaml
@@ -493,14 +497,11 @@ jobs:
             --strict
 ```
 
+---
 ## API Reference
-
 ### Core Functions
-
 #### `transclude(input, options)`
-
 Process a complete string, replacing all transclusion references.
-
 ```typescript
 const result = await transclude('# Doc\n![[intro]]\n![[conclusion]]', {
   basePath: './docs'
@@ -511,9 +512,7 @@ const result = await transclude('# Doc\n![[intro]]\n![[conclusion]]', {
 ```
 
 #### `transcludeFile(filePath, options)`
-
 Process a file, replacing all transclusion references.
-
 ```typescript
 const result = await transcludeFile('./README.md', {
   variables: { version: '2.0' }
@@ -523,10 +522,8 @@ const result = await transcludeFile('./README.md', {
 // result.processedFiles: Array of all processed files
 ```
 
-#### `processLine(line, options)`
-
+#### `processLine(line, options)
 Process a single line of text for transclusions.
-
 ```typescript
 const result = await processLine('See ![[notes]]', {
   basePath: './docs',
@@ -537,9 +534,7 @@ const result = await processLine('See ![[notes]]', {
 ```
 
 #### `createTransclusionStream(options)`
-
 Create a transform stream for processing large files.
-
 ```typescript
 const stream = createTransclusionStream({
   basePath: './docs',
@@ -560,21 +555,22 @@ stream.on('finish', () => {
 
 ### Options
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `basePath` | string | cwd | Base directory for resolving references |
-| `extensions` | string[] | ['md', 'markdown'] | File extensions to try |
-| `variables` | object | {} | Variables for file reference substitution |
-| `templateVariables` | object | {} | Variables for content substitution |
-| `maxDepth` | number | 10 | Maximum recursion depth |
-| `strict` | boolean | false | Exit on errors |
-| `validateOnly` | boolean | false | Only validate, don't output |
-| `stripFrontmatter` | boolean | false | Strip YAML/TOML frontmatter |
-| `cache` | FileCache | none | Optional file cache |
+| Option              | Type      | Default            | Description                               |
+| ------------------- | --------- | ------------------ | ----------------------------------------- |
+| `basePath`          | string    | cwd                | Base directory for resolving references   |
+| `extensions`        | string[]  | ['md', 'markdown'] | File extensions to try                    |
+| `variables`         | object    | {}                 | Variables for file reference substitution |
+| `templateVariables` | object    | {}                 | Variables for content substitution        |
+| `maxDepth`          | number    | 10                 | Maximum recursion depth                   |
+| `strict`            | boolean   | false              | Exit on errors                            |
+| `validateOnly`      | boolean   | false              | Only validate, don't output               |
+| `stripFrontmatter`  | boolean   | false              | Strip YAML/TOML frontmatter               |
+| `cache`             | FileCache | none               | Optional file cache                       |
 
 ### Error Codes
 
 String error codes used in transclusion processing:
+
 - `FILE_NOT_FOUND` - Referenced file doesn't exist
 - `CIRCULAR_REFERENCE` - Circular inclusion detected  
 - `MAX_DEPTH_EXCEEDED` - Too many nested includes
@@ -582,14 +578,16 @@ String error codes used in transclusion processing:
 - `HEADING_NOT_FOUND` - Specified heading not found in file
 
 Numeric error codes used for security violations:
-- `1001` - NULL_BYTE - Null byte in path
-- `1002` - PATH_TRAVERSAL - Path traversal attempt (..)
-- `1003` - ABSOLUTE_PATH - Absolute path not allowed
-- `1004` - UNC_PATH - UNC path not allowed
-- `1005` - OUTSIDE_BASE - Path outside base directory
+
+- `1001` - `NULL_BYTE` - Null byte in path
+- `1002` - `PATH_TRAVERSAL` - Path traversal attempt (..)
+- `1003` - `ABSOLUTE_PATH` - Absolute path not allowed
+- `1004` - `UNC_PATH` - UNC path not allowed
+- `1005` - `OUTSIDE_BASE` - Path outside base directory
 
 See [docs/api.md](./docs/api.md) for complete API documentation.
 
+---
 ## CLI Reference
 
 ```bash
@@ -611,9 +609,10 @@ Key options:
 - `--porcelain` - Machine-readable output for scripting
 - `--progress` - Real-time progress bars
 
+-----
 ## Security
-
 Built-in protection against:
+
 - **Path traversal** - `../../../etc/passwd` → rejected
 - **Absolute paths** - `/etc/passwd` → rejected  
 - **Null bytes** - `file\x00.md` → rejected
@@ -621,6 +620,7 @@ Built-in protection against:
 
 All file access is restricted to the configured base path.
 
+----
 ## Documentation
 
 - 📖 [API Reference](./docs/api.md) - Complete API documentation
@@ -629,8 +629,8 @@ All file access is restricted to the configured base path.
 - 📦 [Example Project](./examples/basic/) - Working example with all features
 - 📝 [CHANGELOG](./CHANGELOG.md) - Version history and migration notes
 
+----
 ## Contributing
-
 We welcome contributions! Please see our [Contributing Guide](./docs/contributing.md) for details on:
 
 - Setting up the development environment
@@ -638,6 +638,7 @@ We welcome contributions! Please see our [Contributing Guide](./docs/contributin
 - Submitting pull requests
 - Adding new features
 
+----
 ## Support
 
 - 🐛 [Report bugs](https://github.com/flyingrobots/markdown-transclusion/issues)
@@ -645,6 +646,7 @@ We welcome contributions! Please see our [Contributing Guide](./docs/contributin
 - 📚 [Read the docs](./docs/)
 - ⭐ Star the project on GitHub!
 
+----
 ## Performance
 
 - **Stream processing** - Constant memory usage regardless of file size
@@ -653,12 +655,14 @@ We welcome contributions! Please see our [Contributing Guide](./docs/contributin
 - **Optional caching** - Reduce file system calls for repeated includes
 
 Benchmarks on a MacBook Pro M1:
+
 - 1MB file with 50 transclusions: ~15ms
 - 10MB file with 500 transclusions: ~120ms
 - Memory usage: ~5MB constant
 
 *Note: Performance measurements taken using Node.js 18.18.0 with warm file system cache. Actual performance may vary based on disk speed, file system, and transclusion depth.*
 
+----
 ## Comparison with Alternatives
 
 | Feature | markdown-transclusion | mdbook | pandoc-include |
@@ -671,10 +675,9 @@ Benchmarks on a MacBook Pro M1:
 | Heading extraction | ✅ | ❌ | ❌ |
 | Zero dependencies | ✅ | ❌ | ❌ |
 
+---
 ## License
 
 MIT License
-
 Copyright © 2025 J. Kirby Ross a.k.a. flyingrobots
-
 See [LICENSE](./LICENSE) for details.
