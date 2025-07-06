@@ -1,0 +1,105 @@
+# Docker Compose configuration for testing markdown-transclusion
+# Uses project-specific naming to avoid conflicts and enable easy cleanup
+
+services:
+  # Node 18.x testing
+  test-node18:
+    image: node:18-alpine
+    container_name: markdown-transclusion-test-node18
+    working_dir: /app
+    volumes:
+      - ../..:/app
+      - markdown-transclusion-node-modules-18:/app/node_modules
+    environment:
+      - NODE_ENV=test
+    command: sh -c "npm ci && npm run build && npm run test:fast"
+    networks:
+      - markdown-transclusion-test
+
+  # Node 20.x testing  
+  test-node20:
+    image: node:20-alpine
+    container_name: markdown-transclusion-test-node20
+    working_dir: /app
+    volumes:
+      - ../..:/app
+      - markdown-transclusion-node-modules-20:/app/node_modules
+    environment:
+      - NODE_ENV=test
+    command: sh -c "npm ci && npm run build && npm run test:fast"
+    networks:
+      - markdown-transclusion-test
+
+  # Node 22.x testing
+  test-node22:
+    image: node:22-alpine
+    container_name: markdown-transclusion-test-node22
+    working_dir: /app
+    volumes:
+      - ../..:/app
+      - markdown-transclusion-node-modules-22:/app/node_modules
+    environment:
+      - NODE_ENV=test
+    command: sh -c "npm ci && npm run build && npm run test:fast"
+    networks:
+      - markdown-transclusion-test
+
+  # Linting (using Node 20.x)
+  lint:
+    image: node:20-alpine
+    container_name: markdown-transclusion-test-lint
+    working_dir: /app
+    volumes:
+      - ../..:/app
+      - markdown-transclusion-node-modules-lint:/app/node_modules
+    environment:
+      - NODE_ENV=test
+    command: sh -c "npm ci && npm run lint"
+    networks:
+      - markdown-transclusion-test
+
+  # Type checking (using Node 20.x)
+  type-check:
+    image: node:20-alpine
+    container_name: markdown-transclusion-test-typecheck
+    working_dir: /app
+    volumes:
+      - ../..:/app
+      - markdown-transclusion-node-modules-typecheck:/app/node_modules
+    environment:
+      - NODE_ENV=test
+    command: sh -c "npm ci && npm run type-check"
+    networks:
+      - markdown-transclusion-test
+
+  # Code quality checks (using Node 20.x)
+  code-quality:
+    image: node:20-alpine
+    container_name: markdown-transclusion-test-code-quality
+    working_dir: /app
+    volumes:
+      - ../..:/app
+      - markdown-transclusion-node-modules-quality:/app/node_modules
+    environment:
+      - NODE_ENV=test
+    command: sh -c "npm ci && npm run code-quality"
+    networks:
+      - markdown-transclusion-test
+
+volumes:
+  markdown-transclusion-node-modules-18:
+    name: markdown-transclusion-node-modules-18
+  markdown-transclusion-node-modules-20:
+    name: markdown-transclusion-node-modules-20
+  markdown-transclusion-node-modules-22:
+    name: markdown-transclusion-node-modules-22
+  markdown-transclusion-node-modules-lint:
+    name: markdown-transclusion-node-modules-lint
+  markdown-transclusion-node-modules-typecheck:
+    name: markdown-transclusion-node-modules-typecheck
+  markdown-transclusion-node-modules-quality:
+    name: markdown-transclusion-node-modules-quality
+
+networks:
+  markdown-transclusion-test:
+    name: markdown-transclusion-test

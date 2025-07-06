@@ -13,6 +13,7 @@ export interface Token {
   // Additional properties for transclusion tokens
   path?: string;
   heading?: string;
+  headingEnd?: string; // For heading range extraction
 }
 
 /**
@@ -148,10 +149,21 @@ export function findTransclusionTokens(text: string): Token[] {
     const headingIndex = content.indexOf('#');
     let path: string;
     let heading: string | undefined;
+    let headingEnd: string | undefined;
     
     if (headingIndex !== -1) {
       path = content.substring(0, headingIndex).trim();
-      heading = content.substring(headingIndex + 1).trim();
+      const headingPart = content.substring(headingIndex + 1).trim();
+      
+      // Check for range syntax (colon separator)
+      const colonIndex = headingPart.indexOf(':');
+      if (colonIndex !== -1) {
+        const startHeading = headingPart.substring(0, colonIndex).trim();
+        heading = startHeading || undefined; // Don't set empty string as heading
+        headingEnd = headingPart.substring(colonIndex + 1).trim();
+      } else {
+        heading = headingPart;
+      }
     } else {
       path = content.trim();
     }
@@ -164,7 +176,8 @@ export function findTransclusionTokens(text: string): Token[] {
         startIndex: startPattern,
         endIndex: endPattern + 2,
         path,
-        ...(heading && { heading })
+        ...(heading && { heading }),
+        ...(headingEnd !== undefined && { headingEnd })
       });
     }
     
@@ -183,6 +196,7 @@ export function createReferenceFromToken(token: Token): {
   startIndex: number;
   endIndex: number;
   heading?: string;
+  headingEnd?: string;
 } | null {
   if (token.type !== 'transclusion' || !token.path) {
     return null;
@@ -193,6 +207,7 @@ export function createReferenceFromToken(token: Token): {
     path: token.path,
     startIndex: token.startIndex,
     endIndex: token.endIndex,
-    ...(token.heading && { heading: token.heading })
+    ...(token.heading && { heading: token.heading }),
+    ...(token.headingEnd !== undefined && { headingEnd: token.headingEnd })
   };
 }

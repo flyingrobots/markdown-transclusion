@@ -16,6 +16,15 @@ export interface TransclusionOptions {
    * Whether to strip YAML/TOML frontmatter from transcluded files and the main document
    */
   stripFrontmatter?: boolean;
+  /**
+   * Initial file path for resolving relative paths in the first file
+   */
+  initialFilePath?: string;
+  /**
+   * Template variables for {{variable}} substitution in content
+   * Values can be static values or functions that return values
+   */
+  templateVariables?: Record<string, string | number | boolean | null | undefined | Date | (() => string | number | boolean | null | undefined | Date)>;
 }
 
 /**
@@ -91,6 +100,11 @@ export interface TransclusionToken {
    * Optional heading anchor (e.g., "heading" from "![[file#heading]]")
    */
   heading?: string;
+
+  /**
+   * Optional end heading for range extraction (e.g., "end" from "![[file#start:end]]")
+   */
+  headingEnd?: string;
 }
 
 /**

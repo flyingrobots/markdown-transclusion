@@ -60,46 +60,64 @@ export function resolvePath(
       };
     }
 
-    // Step 3: Determine the resolution base (parent directory or base path)
-    let resolutionBase = basePath;
-    if (parentPath && !path.isAbsolute(substitutedReference)) {
-      // If parent path is provided and reference is relative, resolve from parent
-      resolutionBase = path.dirname(parentPath);
-    }
-    
-    // Step 4: Generate paths to try using extension resolver
+    // Step 3: Generate paths to try using extension resolver
     const pathsToTry = resolveExtensions(substitutedReference, extensions);
 
     // Step 5: Try each potential path
-    for (const relativePath of pathsToTry) {
-      const absolutePath = resolveToAbsolutePath(relativePath, resolutionBase);
+    // First try relative to parent (if parent path provided), then relative to base path
+    const searchBases = [];
+    if (parentPath && !path.isAbsolute(substitutedReference)) {
+      searchBases.push(path.dirname(parentPath));
+    }
+    if (basePath && !searchBases.includes(basePath)) {
+      searchBases.push(basePath);
+    }
+    
+    let lastSecurityError: { message: string; errorCode?: number } | null = null;
+    
+    for (const searchBase of searchBases) {
+      for (const relativePath of pathsToTry) {
+        const absolutePath = resolveToAbsolutePath(relativePath, searchBase);
 
-      // Step 5: Security check
-      const securityResult = validateWithinBase(absolutePath, basePath, relativePath);
-      if (!securityResult.ok) {
-        return {
-          absolutePath: '',
-          exists: false,
-          originalReference: reference,
-          error: securityResult.error.message,
-          errorCode: securityResult.error.errorCode
-        };
-      }
+        // Step 5: Security check
+        const securityResult = validateWithinBase(absolutePath, basePath, relativePath);
+        if (!securityResult.ok) {
+          // Store the security error in case all paths fail
+          lastSecurityError = {
+            message: securityResult.error.message,
+            errorCode: securityResult.error.errorCode
+          };
+          continue;
+        }
 
-      // Step 6: Check if file exists
-      const existingFile = findExistingFile([relativePath], resolutionBase);
-      if (existingFile) {
-        return {
-          absolutePath: existingFile.absolutePath,
-          exists: true,
-          originalReference: reference
-        };
+        // Step 6: Check if file exists
+        const existingFile = findExistingFile([relativePath], searchBase);
+        if (existingFile) {
+          return {
+            absolutePath: existingFile.absolutePath,
+            exists: true,
+            originalReference: reference
+          };
+        }
       }
     }
 
     // No file found
+    // If all paths failed security checks, return the security error
+    if (lastSecurityError) {
+      return {
+        absolutePath: '',
+        exists: false,
+        originalReference: reference,
+        error: lastSecurityError.message,
+        errorCode: lastSecurityError.errorCode
+      };
+    }
+    
+    // Otherwise return file not found
+    const primaryBase = searchBases[0] || basePath;
     return {
-      absolutePath: resolveToAbsolutePath(substitutedReference, resolutionBase),
+      absolutePath: resolveToAbsolutePath(substitutedReference, primaryBase),
       exists: false,
       originalReference: reference,
       error: `File not found: ${substitutedReference}`

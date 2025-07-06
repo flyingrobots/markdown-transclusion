@@ -58,7 +58,7 @@ export function extractHeadingContent(content: string, headingText: string): str
     }
   }
   
-  // Extract the content
+  // Extract the content (include the heading line itself)
   const extractedLines = lines.slice(startIndex, endIndex);
   
   // Remove trailing empty lines
@@ -66,8 +66,6 @@ export function extractHeadingContent(content: string, headingText: string): str
     extractedLines.pop();
   }
   
-  // Remove the heading line itself if requested
-  // Keep it for now as it provides context
   return extractedLines.join('\n');
 }
 
@@ -87,4 +85,77 @@ export function splitReference(reference: string): { path: string; heading?: str
     path: parts[0],
     heading: parts[1] || undefined
   };
+}
+
+/**
+ * Extract content for a heading range from markdown content
+ * @param content The full markdown content
+ * @param startHeading The starting heading text (without # prefix)
+ * @param endHeading The ending heading text (without # prefix), or empty for end of document
+ * @returns The content from start heading until (but not including) end heading
+ */
+export function extractHeadingRange(content: string, startHeading: string, endHeading?: string): string | null {
+  if (!startHeading && !endHeading) {
+    return content;
+  }
+  
+  const lines = content.split('\n');
+  const normalizedStart = startHeading ? startHeading.trim().toLowerCase() : '';
+  const normalizedEnd = endHeading ? endHeading.trim().toLowerCase() : '';
+  
+  let startIndex = -1;
+  let endIndex = lines.length;
+  
+  // If startHeading is empty, start from beginning
+  if (!normalizedStart) {
+    startIndex = 0;
+  } else {
+    // Find the start heading
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      const headingMatch = line.match(/^(#{1,6})\s+(.+)$/);
+      
+      if (headingMatch) {
+        // const level = headingMatch[1].length; // Not used currently
+        const text = headingMatch[2].trim().toLowerCase();
+        
+        if (text === normalizedStart) {
+          startIndex = i;
+          break;
+        }
+      }
+    }
+    
+    // Start heading not found
+    if (startIndex === -1) {
+      return null;
+    }
+  }
+  
+  // If endHeading is specified, find it
+  if (normalizedEnd) {
+    for (let i = startIndex + 1; i < lines.length; i++) {
+      const line = lines[i];
+      const headingMatch = line.match(/^(#{1,6})\s+(.+)$/);
+      
+      if (headingMatch) {
+        const text = headingMatch[2].trim().toLowerCase();
+        
+        if (text === normalizedEnd) {
+          endIndex = i;
+          break;
+        }
+      }
+    }
+  }
+  
+  // Extract the content
+  const extractedLines = lines.slice(startIndex, endIndex);
+  
+  // Remove trailing empty lines
+  while (extractedLines.length > 0 && extractedLines[extractedLines.length - 1].trim() === '') {
+    extractedLines.pop();
+  }
+  
+  return extractedLines.join('\n');
 }

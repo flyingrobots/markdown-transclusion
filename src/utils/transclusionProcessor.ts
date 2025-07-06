@@ -8,7 +8,7 @@ import { parseTransclusionReferences } from '../parser';
 import { resolvePath } from '../resolver';
 import { readFile } from '../fileReader';
 import { trimForTransclusion } from './contentProcessing';
-import { extractHeadingContent } from './headingExtractor';
+import { extractHeadingContent, extractHeadingRange } from './headingExtractor';
 
 /**
  * Reference with its resolved path information
@@ -68,22 +68,41 @@ export async function readResolvedRefs(
       try {
         let content = await readFile(resolved.absolutePath, options.cache);
         
-        // Extract specific heading if requested
-        if (ref.heading) {
-          const headingContent = extractHeadingContent(content, ref.heading);
-          if (headingContent === null) {
-            results.push({
-              ref,
-              resolved,
-              error: {
-                message: `Heading "${ref.heading}" not found in ${resolved.absolutePath}`,
-                path: resolved.absolutePath,
-                code: 'HEADING_NOT_FOUND'
-              }
-            });
-            continue;
+        // Extract specific heading or heading range if requested
+        if (ref.heading || ref.headingEnd !== undefined) {
+          // Check if this is a range extraction
+          if (ref.headingEnd !== undefined) {
+            const rangeContent = extractHeadingRange(content, ref.heading || '', ref.headingEnd);
+            if (rangeContent === null) {
+              results.push({
+                ref,
+                resolved,
+                error: {
+                  message: `Start heading "${ref.heading || '(beginning)'}" not found in ${resolved.absolutePath}`,
+                  path: resolved.absolutePath,
+                  code: 'HEADING_NOT_FOUND'
+                }
+              });
+              continue;
+            }
+            content = rangeContent;
+          } else if (ref.heading) {
+            // Single heading extraction
+            const headingContent = extractHeadingContent(content, ref.heading);
+            if (headingContent === null) {
+              results.push({
+                ref,
+                resolved,
+                error: {
+                  message: `Heading "${ref.heading}" not found in ${resolved.absolutePath}`,
+                  path: resolved.absolutePath,
+                  code: 'HEADING_NOT_FOUND'
+                }
+              });
+              continue;
+            }
+            content = headingContent;
           }
-          content = headingContent;
         }
         
         results.push({

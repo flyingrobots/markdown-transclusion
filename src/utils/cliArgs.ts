@@ -14,9 +14,16 @@ export interface CliArgs {
   strict?: boolean;
   validateOnly?: boolean;
   stripFrontmatter?: boolean;
+  dryRun?: boolean;
   logLevel?: LogLevel;
   help?: boolean;
   version?: boolean;
+  verbose?: boolean;
+  porcelain?: boolean;
+  progress?: boolean;
+  plugins?: string[];
+  pluginConfig?: string;
+  templateVariables?: Record<string, string>;
 }
 
 /**
@@ -90,6 +97,16 @@ export function parseCliArgs(argv: string[]): Result<CliArgs, CliArgsError> {
     });
   }
   
+  // Validate output mode conflicts
+  const outputModeCount = [args.verbose, args.porcelain, args.progress].filter(Boolean).length;
+  if (outputModeCount > 1) {
+    return Err({
+      code: CliArgsErrorCode.CONFLICTING_FLAGS,
+      message: 'Cannot use multiple output modes (--verbose, --porcelain, --progress) together',
+      flag: '--verbose'
+    });
+  }
+  
   return Ok(args);
 }
 
@@ -125,6 +142,22 @@ function parseLongFlag(
       
     case 'strip-frontmatter':
       result.stripFrontmatter = true;
+      break;
+      
+    case 'dry-run':
+      result.dryRun = true;
+      break;
+      
+    case 'verbose':
+      result.verbose = true;
+      break;
+      
+    case 'porcelain':
+      result.porcelain = true;
+      break;
+      
+    case 'progress':
+      result.progress = true;
       break;
       
     case 'output':
@@ -231,6 +264,58 @@ function parseLongFlag(
       nextIndex++;
       break;
     }
+    
+    case 'plugins':
+    case 'plugin': {
+      if (nextIndex >= args.length || args[nextIndex].startsWith('-')) {
+        return Err({
+          code: CliArgsErrorCode.MISSING_VALUE,
+          message: `Flag --${flagName} requires a value`,
+          flag: `--${flagName}`
+        });
+      }
+      const pluginValue = args[nextIndex];
+      // Support comma-separated list of plugins
+      const pluginList = pluginValue.split(',').map(p => p.trim()).filter(Boolean);
+      result.plugins = (result.plugins || []).concat(pluginList);
+      nextIndex++;
+      break;
+    }
+    
+    case 'plugin-config': {
+      if (nextIndex >= args.length || args[nextIndex].startsWith('-')) {
+        return Err({
+          code: CliArgsErrorCode.MISSING_VALUE,
+          message: `Flag --${flagName} requires a value`,
+          flag: `--${flagName}`
+        });
+      }
+      result.pluginConfig = args[nextIndex];
+      nextIndex++;
+      break;
+    }
+    
+    case 'template-variables':
+    case 'template-vars': {
+      if (nextIndex >= args.length || args[nextIndex].startsWith('-')) {
+        return Err({
+          code: CliArgsErrorCode.MISSING_VALUE,
+          message: `Flag --${flagName} requires a value`,
+          flag: `--${flagName}`
+        });
+      }
+      const varsResult = parseVariables(args[nextIndex]);
+      if (!varsResult.ok) {
+        return Err({
+          code: CliArgsErrorCode.INVALID_VALUE,
+          message: `Invalid template variables format: ${varsResult.error}`,
+          flag: `--${flagName}`
+        });
+      }
+      result.templateVariables = varsResult.value;
+      nextIndex++;
+      break;
+    }
       
     default:
       return Err({
@@ -324,6 +409,38 @@ function parseShortFlag(
  * Parse variable string (key=value,key2=value2)
  */
 function parseVariables(str: string): Result<Record<string, string>, string> {
+  // First, try to parse as JSON for richer data types
+  if (str.trim().startsWith('{')) {
+    try {
+      const parsed = JSON.parse(str);
+      if (typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed)) {
+        // Convert all values to strings for CLI compatibility
+        const vars: Record<string, string> = {};
+        for (const [key, value] of Object.entries(parsed)) {
+          if (value === null) {
+            vars[key] = 'null';
+          } else if (value === undefined) {
+            vars[key] = 'undefined';
+          } else if (value instanceof Date) {
+            vars[key] = value.toISOString();
+          } else if (typeof value === 'object') {
+            try {
+              vars[key] = JSON.stringify(value);
+            } catch {
+              vars[key] = '[object Object]';
+            }
+          } else {
+            vars[key] = String(value);
+          }
+        }
+        return Ok(vars);
+      }
+    } catch {
+      // If JSON parsing fails, fall through to key=value parsing
+    }
+  }
+  
+  // Parse as comma-separated key=value pairs
   const vars: Record<string, string> = {};
   const pairs = str.split(',');
   
@@ -385,20 +502,44 @@ OPTIONS:
                           (default: 10, prevents infinite loops)
   --variables VARS        Variables for {{var}} substitution in filenames
                           Format: key1=value1,key2=value2
+  --template-variables    Template variables for {{var}} substitution in content
+    VARS                  Format: key1=value1,key2=value2
+                          Special values: @date, @time, @timestamp for dynamic values
   -s, --strict            Exit with error code 1 on any transclusion failure
                           (default: insert error comment and continue)
   --validate-only         Check all references without outputting content
                           Useful for CI/CD validation workflows
+  --dry-run               Preview transclusion processing without writing files
+                          Shows processed content to stdout and processing statistics
   --strip-frontmatter     Remove YAML/TOML frontmatter from transcluded files
                           and the main document (frontmatter starts/ends with --- or +++)
   --log-level LEVEL       Set logging verbosity: ERROR, WARN, INFO, DEBUG
                           (default: INFO, logs go to stderr)
+  --verbose               Enable detailed human-readable progress output
+                          Shows file processing, timing, and statistics
+  --porcelain             Machine-readable output format for scripting
+                          Outputs tab-separated values for easy parsing
+  --progress              Show real-time progress bars during processing
+                          Useful for large documents with many transclusions
+
+PLUGIN OPTIONS:
+  --plugins PATHS         Comma-separated list of plugin files/directories to load
+                          Supports .js, .mjs, and .ts files
+                          Example: --plugins ./plugins/,./custom-plugin.js
+  --plugin-config FILE    JSON configuration file for plugin settings
+                          Contains plugin-specific configuration options
 
 TRANSCLUSION SYNTAX:
   ![[filename]]           Include entire file
   ![[filename#heading]]   Include specific heading section
   ![[dir/file]]          Include file from subdirectory
   ![[file-{{var}}]]      Include file with variable substitution
+  
+TEMPLATE VARIABLES:
+  {{variable}}            Replaced with value from --template-variables
+  {{date}}                Current date (if date is defined)
+  {{time}}                Current time (if time is defined)
+  {{author}}              Author name (if author is defined)
 
 EXAMPLES:
   # Process a single file
@@ -409,9 +550,15 @@ EXAMPLES:
 
   # Process with variables for multilingual docs
   markdown-transclusion template.md --variables lang=es,version=2.0
+  
+  # Process with template variables for content substitution
+  markdown-transclusion template.md --template-variables "title=My Report,author=John Doe,date=2025-07-04"
 
   # Validate all references in documentation
   markdown-transclusion docs/index.md --validate-only --strict
+
+  # Preview processing without writing files
+  markdown-transclusion docs.md --dry-run
 
   # Process files in different directory
   markdown-transclusion README.md --base-path ./docs
@@ -425,6 +572,22 @@ EXAMPLES:
   # Silent mode (only errors)
   markdown-transclusion doc.md --log-level ERROR
 
+  # Verbose output for debugging
+  markdown-transclusion complex-doc.md --verbose
+
+  # Machine-readable output for scripts
+  markdown-transclusion doc.md --porcelain | awk -F'\t' '$1=="ERROR" {print $3}'
+
+  # Show progress for large documents
+  markdown-transclusion book.md --progress --output book-compiled.md
+
+OUTPUT MODES:
+  Default mode follows Unix "silence is golden" principle - only errors shown
+  --verbose shows detailed processing information to stderr
+  --porcelain outputs machine-readable format to stderr
+  --progress displays real-time progress bars to stderr
+  Note: Content always goes to stdout, metadata/progress to stderr
+
 EXIT CODES:
   0  Success
   1  Error (file not found, transclusion errors with --strict, etc.)
@@ -436,5 +599,5 @@ For more information, see: https://github.com/flyingrobots/markdown-transclusion
  * Get version text
  */
 export function getVersionText(): string {
-  return 'markdown-transclusion version 1.0.0';
+  return 'markdown-transclusion version 1.1.2';
 }
