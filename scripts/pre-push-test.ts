@@ -1,7 +1,7 @@
 #!/usr/bin/env tsx
 
 import { spawn, ChildProcess } from 'child_process';
-import { platform } from 'os';
+import chalk from 'chalk';
 
 interface TestProcess {
   name: string;
@@ -9,14 +9,6 @@ interface TestProcess {
   process?: ChildProcess;
   completed: boolean;
   exitCode?: number;
-}
-
-class Colors {
-  static readonly RED = '\033[0;31m';
-  static readonly GREEN = '\033[0;32m';
-  static readonly YELLOW = '\033[1;33m';
-  static readonly BLUE = '\033[0;34m';
-  static readonly NC = '\033[0m'; // No Color
 }
 
 class PrePushTester {
@@ -29,19 +21,19 @@ class PrePushTester {
   ];
 
   private printStatus(message: string) {
-    console.log(`${Colors.BLUE}[PRE-PUSH]${Colors.NC} ${message}`);
+    console.log(`${chalk.blue('[PRE-PUSH]')} ${message}`);
   }
 
   private printSuccess(message: string) {
-    console.log(`${Colors.GREEN}[PRE-PUSH]${Colors.NC} ✓ ${message}`);
+    console.log(`${chalk.green('[PRE-PUSH]')} ✓ ${message}`);
   }
 
   private printError(message: string) {
-    console.log(`${Colors.RED}[PRE-PUSH]${Colors.NC} ✗ ${message}`);
+    console.log(`${chalk.red('[PRE-PUSH]')} ✗ ${message}`);
   }
 
   private printWarning(message: string) {
-    console.log(`${Colors.YELLOW}[PRE-PUSH]${Colors.NC} ⚠ ${message}`);
+    console.log(`${chalk.yellow('[PRE-PUSH]')} ⚠ ${message}`);
   }
 
   private async checkDockerRunning(): Promise<boolean> {
