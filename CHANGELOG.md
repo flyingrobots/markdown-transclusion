@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.0] - 2025-07-06
+
 ### Added
 - **Template Variable Substitution** - Dynamic content substitution in transcluded files
   - Support for `{{variable}}` syntax within transcluded content
