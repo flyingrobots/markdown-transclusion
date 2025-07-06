@@ -14,11 +14,6 @@
   "bin": {
     "markdown-transclusion": "dist/cli.js"
   },
-  "files": [
-    "dist/**/*",
-    "README.md",
-    "LICENSE"
-  ],
   "directories": {
     "doc": "docs"
   },

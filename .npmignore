@@ -1,0 +1,82 @@
+# Development files
+*.log
+*.tmp
+.DS_Store
+.env
+.env.*
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.obsidian/
+.claude/
+
+# Test files
+test/
+tests/
+coverage/
+.nyc_output/
+jest.config.*
+*.test.ts
+*.test.js
+*.spec.ts
+*.spec.js
+
+# Source files (we ship compiled JS)
+src/
+*.ts
+!dist/**/*.d.ts
+
+# Development configs
+.eslintrc*
+.prettierrc*
+tsconfig.json
+tsconfig.*.json
+.editorconfig
+.husky/
+.gitignore
+.gitattributes
+eslint.config.js
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+.travis.yml
+
+# Docker
+Dockerfile*
+docker-compose*
+.dockerignore
+
+# Documentation
+docs/
+*.md
+!README.md
+!LICENSE
+
+# Scripts
+scripts/
+fix-lint.sh
+
+# Examples
+examples/
+
+# Build artifacts
+*.tgz
+code-quality-report.json
+
+# Project files
+CLAUDE.md
+OPTIMIZATION_SUMMARY.md
+CONTRIBUTING.md
+
+# Temporary directories
+tmp/
+temp/
