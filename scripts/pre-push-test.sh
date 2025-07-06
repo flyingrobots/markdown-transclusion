@@ -37,7 +37,7 @@ echo
 # Step 1: Lint
 print_status "Running ESLint..."
 echo "----------------------------------------"
-if docker compose -f test/docker/docker-compose.test.yml run --rm lint 2>&1; then
+if docker compose -f test/docker/docker-compose.test.yml run --rm -T lint 2>&1; then
     echo "----------------------------------------"
     print_success "Linting passed"
 else
@@ -50,7 +50,7 @@ echo
 # Step 2: Type check
 print_status "Running TypeScript type check..."
 echo "----------------------------------------"
-if docker compose -f test/docker/docker-compose.test.yml run --rm type-check 2>&1; then
+if docker compose -f test/docker/docker-compose.test.yml run --rm -T type-check 2>&1; then
     echo "----------------------------------------"
     print_success "Type checking passed"
 else
@@ -66,7 +66,7 @@ NODE_VERSIONS=("18" "20" "22")
 for version in "${NODE_VERSIONS[@]}"; do
     print_status "Running tests on Node.js ${version}.x..."
     echo "----------------------------------------"
-    if docker compose -f test/docker/docker-compose.test.yml run --rm "test-node${version}" 2>&1; then
+    if docker compose -f test/docker/docker-compose.test.yml run --rm -T "test-node${version}" 2>&1; then
         echo "----------------------------------------"
         print_success "Tests passed on Node.js ${version}.x"
     else
