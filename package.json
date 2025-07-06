@@ -24,6 +24,12 @@
     "lint:fix": "eslint src --ext .ts --fix",
     "type-check": "tsc --noEmit",
     "clean": "rm -rf dist coverage",
+    "test:docker": "docker compose -f docker-compose.test.yml run --rm test-node20",
+    "test:all-versions": "./scripts/pre-push-test.sh",
+    "test:node18": "docker compose -f docker-compose.test.yml run --rm test-node18",
+    "test:node20": "docker compose -f docker-compose.test.yml run --rm test-node20", 
+    "test:node22": "docker compose -f docker-compose.test.yml run --rm test-node22",
+    "lint:docker": "docker compose -f docker-compose.test.yml run --rm lint",
     "preversion": "git diff --quiet && git diff --cached --quiet && git branch --show-current | grep -q '^main$' || (echo 'Error: npm version requires clean main branch' && exit 1)",
     "prepublishOnly": "npm run clean && npm run build && npm test",
     "prepare": "husky"
