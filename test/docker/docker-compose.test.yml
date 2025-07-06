@@ -9,7 +9,7 @@ services:
     working_dir: /app
     volumes:
       - ../..:/app
-      - markdown-transclusion-node-modules:/app/node_modules
+      - markdown-transclusion-node-modules-18:/app/node_modules
     environment:
       - NODE_ENV=test
     command: sh -c "npm ci && npm test"
@@ -23,7 +23,7 @@ services:
     working_dir: /app
     volumes:
       - ../..:/app
-      - markdown-transclusion-node-modules:/app/node_modules
+      - markdown-transclusion-node-modules-20:/app/node_modules
     environment:
       - NODE_ENV=test
     command: sh -c "npm ci && npm test"
@@ -37,7 +37,7 @@ services:
     working_dir: /app
     volumes:
       - ../..:/app
-      - markdown-transclusion-node-modules:/app/node_modules
+      - markdown-transclusion-node-modules-22:/app/node_modules
     environment:
       - NODE_ENV=test
     command: sh -c "npm ci && npm test"
@@ -51,7 +51,7 @@ services:
     working_dir: /app
     volumes:
       - ../..:/app
-      - markdown-transclusion-node-modules:/app/node_modules
+      - markdown-transclusion-node-modules-lint:/app/node_modules
     environment:
       - NODE_ENV=test
     command: sh -c "npm ci && npm run lint"
@@ -65,7 +65,7 @@ services:
     working_dir: /app
     volumes:
       - ../..:/app
-      - markdown-transclusion-node-modules:/app/node_modules
+      - markdown-transclusion-node-modules-typecheck:/app/node_modules
     environment:
       - NODE_ENV=test
     command: sh -c "npm ci && npm run type-check"
@@ -73,8 +73,16 @@ services:
       - markdown-transclusion-test
 
 volumes:
-  markdown-transclusion-node-modules:
-    name: markdown-transclusion-node-modules
+  markdown-transclusion-node-modules-18:
+    name: markdown-transclusion-node-modules-18
+  markdown-transclusion-node-modules-20:
+    name: markdown-transclusion-node-modules-20
+  markdown-transclusion-node-modules-22:
+    name: markdown-transclusion-node-modules-22
+  markdown-transclusion-node-modules-lint:
+    name: markdown-transclusion-node-modules-lint
+  markdown-transclusion-node-modules-typecheck:
+    name: markdown-transclusion-node-modules-typecheck
 
 networks:
   markdown-transclusion-test:
